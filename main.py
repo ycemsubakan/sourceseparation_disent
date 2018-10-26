@@ -56,7 +56,6 @@ parser.add_argument('--notes', type=str, default='')
 #parser.add_argument('--model', type=str, default='mlp', help='standard_ff, standard_rnn, dis_ff, dis_rnn')
 
 parser.add_argument('--dropout', type=float, default=0.5)
-parser.add_argument('--num_layers', type=int, default=2)
 
 arguments = parser.parse_args()
 
@@ -74,15 +73,12 @@ arguments.tr_directories = tr_directories
 arguments.tst_directories = tst_directories
 arguments.val_directories = val_directories
 
-pdb.set_trace()
 save_path = 'model_files'
 if not os.path.exists(save_path):
     os.mkdir(save_path)
 
 arguments.model = 'separatorarc_{}_attention_{}_separatorshare_{}'.format(arguments.separator_nn, arguments.attention, arguments.separator_sharing)
     
-pdb.set_trace()
-
 if arguments.model == 'separatorarc_mlp_attention_0_separatorshare_0':
     snet = models.mlp(arguments, arguments.K, arguments.Kdis, 513)
 
