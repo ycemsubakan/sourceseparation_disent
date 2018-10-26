@@ -67,16 +67,19 @@ save_path = 'model_files'
 if not os.path.exists(save_path):
     os.mkdir(save_path)
     
-if arguments.model == 'standard_ff':
+if arguments.model == 'st_ff':
     snet = models.sourcesep_net_st_ff(arguments, arguments.K, arguments.Kdis, 513)
+elif arguments.model == 'st_rnn':
+    snet = models.sourcesep_net_st_rnn(arguments, arguments.K, arguments.Kdis, 513)
+
 elif arguments.model == 'dis_ff_dis_rnn':
     snet = models.sourcesep_net_dis_ff_dis_rnn(arguments, arguments.K, arguments.Kdis, 513)
 elif arguments.model == 'dis_ff_dis_ff':
     snet = models.sourcesep_net_dis_ff_dis_ff(arguments, arguments.K, arguments.Kdis, 513)
 elif arguments.model == 'disside_ff_dis_ff':
     snet = models.sourcesep_net_disside_ff_dis_ff(arguments, arguments.K, arguments.Kdis, 513, side_sources)
-
-
+elif arguments.model == 'disatt_ff_dis_ff':
+    snet = models.sourcesep_net_disatt_ff_dis_ff(arguments, arguments.K, arguments.Kdis, 513, side_sources)
 
 if arguments.cuda:
     snet = snet.cuda()

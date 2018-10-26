@@ -7,7 +7,7 @@ folder = 'results/'
 bss_st_ff = torch.load(folder + 'standard_ff.bsseval')
 bss_dis_ff_dis_rnn = torch.load(folder + 'dis_ff_dis_rnn.bsseval')
 bss_dis_ff_dis_ff = torch.load(folder + 'dis_ff_dis_ff.bsseval')
-bss_disside_ff_dis_ff = torch.load(folder + 'disside_ff_dis_ff.bsseval')
+bss_disside_ff_dis_ff = torch.load(folder + 'disatt_ff_dis_ff.bsseval')
 
 
 args_dis_ff_dis_rnn = torch.load(folder + 'dis_ff_dis_ff.args')
