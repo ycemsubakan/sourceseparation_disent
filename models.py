@@ -63,7 +63,7 @@ class base_model(nn.Module):
 
 class mlp(base_model): 
     def __init__(self, arguments, K, Kdis, Linput):
-        super(base_model, self).__init__(arguments, K, Kdis, Linput)
+        super(mlp, self).__init__(arguments, K, Kdis, Linput)
         dropout = arguments.dropout
 
         if arguments.num_layers==1:
