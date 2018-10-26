@@ -31,7 +31,7 @@ parser.add_argument('--optimizer', type=str, default='RMSprop', metavar='optim',
 parser.add_argument('--ntrs', type=int, default=100)
 parser.add_argument('--ntsts', type=int, default=20)
 
-parser.add_argument('--batch_size', type=int, default=64)
+parser.add_argument('--batch_size', type=int, default=10)
 parser.add_argument('--clip_norm', type=float, default=0.25)
 parser.add_argument('--plot_interval', type=int, default=100)
 parser.add_argument('--plot_training', type=int, default=1)
@@ -42,8 +42,10 @@ parser.add_argument('--K', type=int, default=150)
 parser.add_argument('--Kdis', type=int, default=100)
 parser.add_argument('--Kdisc', type=int, default=90)
 parser.add_argument('--notes', type=str, default='')
-parser.add_argument('--model', type=str, default='standard_ff', help='standard_ff, standard_rnn, dis_ff, dis_rnn')
+parser.add_argument('--model', type=str, default='mlp', help='standard_ff, standard_rnn, dis_ff, dis_rnn')
 
+parser.add_argument('--dropout', type=float, default=0.5)
+parser.add_argument('--num_layers', type=int, default=2)
 
 arguments = parser.parse_args()
 
@@ -65,21 +67,8 @@ save_path = 'model_files'
 if not os.path.exists(save_path):
     os.mkdir(save_path)
     
-if arguments.model == 'st_ff':
-    snet = models.sourcesep_net_st_ff(arguments, arguments.K, arguments.Kdis, 513)
-elif arguments.model == 'st_rnn':
-    snet = models.sourcesep_net_st_rnn(arguments, arguments.K, arguments.Kdis, 513)
-
-elif arguments.model == 'distemplate_ff_dis_ff':
-    snet = models.sourcesep_net_distemplate_ff_dis_ff(arguments, arguments.K, arguments.Kdis, 513)
-elif arguments.model == 'dis_ff_dis_rnn':
-    snet = models.sourcesep_net_dis_ff_dis_rnn(arguments, arguments.K, arguments.Kdis, 513)
-elif arguments.model == 'dis_ff_dis_ff':
-    snet = models.sourcesep_net_dis_ff_dis_ff(arguments, arguments.K, arguments.Kdis, 513)
-elif arguments.model == 'disside_ff_dis_ff':
-    snet = models.sourcesep_net_disside_ff_dis_ff(arguments, arguments.K, arguments.Kdis, 513, side_sources)
-elif arguments.model == 'disatt_ff_dis_ff':
-    snet = models.sourcesep_net_disatt_ff_dis_ff(arguments, arguments.K, arguments.Kdis, 513, side_sources)
+if arguments.model == 'mlp':
+    snet = models.mlp(arguments, arguments.K, arguments.Kdis, 513)
 
 if arguments.cuda:
     snet = snet.cuda()
@@ -95,6 +84,7 @@ else:
 snet.trainer(loader, opt, vis)
 torch.save(snet.state_dict(), save_path + '/' + arguments.model + '.t')
 
+snet.eval()
 
 results_path = 'results'
 if not os.path.exists(results_path):

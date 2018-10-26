@@ -4,12 +4,12 @@ from pydoc import locate
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.distributions import Categorical
-from torch.distributions.normal import Normal
-from torch.distributions.kl import kl_divergence as KL
+#from torch.distributions import Categorical
+#from torch.distributions.normal import Normal
+#from torch.distributions.kl import kl_divergence as KL
 
-from utils import * 
-from distributions import hyperspherical_uniform, von_mises_fisher 
+#from utils import * 
+#from distributions import hyperspherical_uniform, von_mises_fisher 
 
 # Variational Dropout
 # ----------------------------------------------------------------------------------
@@ -36,13 +36,14 @@ class LockedDropout(nn.Module):
 
 ''' Neat way of doing  ResNet while changing the dimension of the representation'''
 class GatedDense(nn.Module):
-    def __init__(self, input_size, output_size, activation=None):
+    def __init__(self, input_size, output_size, dropout=0, activation=None):
         super(GatedDense, self).__init__()
 
         self.activation = activation
         self.sigmoid = nn.Sigmoid()
         self.h = nn.Linear(input_size, output_size)
         self.g = nn.Linear(input_size, output_size)
+        self.drop = nn.Dropout(p=dropout)
 
     def forward(self, x):
         h = self.h(x)
@@ -50,6 +51,9 @@ class GatedDense(nn.Module):
             h = self.activation( self.h( x ) )
 
         g = self.sigmoid( self.g( x ) )
+
+        out = h * g 
+        out = self.drop(out)
 
         return h * g
 
