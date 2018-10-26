@@ -116,23 +116,24 @@ class mlp_share(base_model):
 class lstm(base_model): 
     def __init__(self, arguments, K, Kdis, Linput):
         super(base_model, self).__init__(arguments, K, Kdis, Linput)
+        dropout=arguments.dropout
 
         self.sep_rnn1 = nn.LSTM(input_size = Linput,
-                               hidden_size = Krnn,
-                               num_layers=2,
-                               dropout=0.5,
+                               hidden_size = K,
+                               num_layers=arguments.num_layers,
+                               dropout=dropout,
                                batch_first=True,
                                bidirectional=True)
 
         self.sep_rnn2 = nn.LSTM(input_size = Linput,
-                               hidden_size = Krnn,
-                               num_layers=2, 
-                               dropout=0.5,
+                               hidden_size = K,
+                               num_layers=arguments.num_layers, 
+                               dropout=dropout,
                                batch_first=True,
                                bidirectional=True)
 
-        self.sep_out1 = nn.Linear(2*Krnn, Linput)
-        self.sep_out2 = nn.Linear(2*Krnn, Linput)
+        self.sep_out1 = GatedDense(2*Krnn, Linput, dropout=dropout)
+        self.sep_out2 = GatedDense(2*Krnn, Linput, dropout=dropout)
 
     def forward(self, dt):
 
@@ -146,6 +147,7 @@ class lstm(base_model):
         # get the network outputs
         xhat1 = F.softplus(self.sep_out1(hhat1))
         xhat2 = F.softplus(self.sep_out2(hhat2))
+        
         return xhat1, xhat2
 
 
