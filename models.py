@@ -75,10 +75,17 @@ class sourcesep_net_dis_ff_dis_rnn(nn.Module):
         errs = []
         for ep in range(EP):
             for i, dt in enumerate(loader):
+
+                self.zero_grad()
                 xhat1, xhat2 = self.forward(dt)
                 
                 err = (dt[2] - xhat1).pow(2).mean() + (dt[3] - xhat2).pow(2).mean()
                 err.backward()
+
+                # grad clipping: 
+                params = opt.param_groups[0]['params']
+                torch.nn.utils.clip_grad_norm_(params, self.arguments.clip_norm, norm_type=2)
+                
                 opt.step()
 
                 print('Error {}, batch [{}/{}], epoch [{}/{}]'.format(err.item(),
@@ -332,12 +339,15 @@ class sourcesep_net_st_rnn(sourcesep_net_dis_ff_dis_rnn):
 
         self.sep_rnn1 = nn.LSTM(input_size = Linput,
                                hidden_size = Krnn,
-                               num_layers=1, 
+                               num_layers=2,
+                               dropout=0.5,
                                batch_first=True,
                                bidirectional=True)
+
         self.sep_rnn2 = nn.LSTM(input_size = Linput,
                                hidden_size = Krnn,
-                               num_layers=1, 
+                               num_layers=2, 
+                               dropout=0.5,
                                batch_first=True,
                                bidirectional=True)
 
