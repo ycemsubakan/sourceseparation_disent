@@ -7,7 +7,7 @@ import pdb
 import numpy as np
 
 class base_model(nn.Module):
-    def __init__(self, arguments, Krnn, Kdis, Linput):
+    def __init__(self, arguments, K, Kdis, Linput):
         super(base_model, self).__init__()
         self.Kdis = Kdis
         self.Linput = Linput
@@ -113,11 +113,9 @@ class mlp_share(base_model):
         return xhat1, xhat2
 
 
-class sourcesep_net_st_rnn(base_model): 
-    def __init__(self, arguments, Krnn, Kdis, Linput):
-        super(base_model, self).__init__(arguments, Krnn, Kdis, Linput)
-        self.dis_rnn = None
-        self.pper = arguments.plot_interval
+class lstm(base_model): 
+    def __init__(self, arguments, K, Kdis, Linput):
+        super(base_model, self).__init__(arguments, K, Kdis, Linput)
 
         self.sep_rnn1 = nn.LSTM(input_size = Linput,
                                hidden_size = Krnn,
