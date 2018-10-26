@@ -87,8 +87,6 @@ class mlp(base_model):
         return xhat1, xhat2
 
 
-
-
 class mlp_share(base_model): 
     def __init__(self, arguments, K, Kdis, Linput):
         super(base_model, self).__init__(arguments, K, Kdis, Linput)
@@ -113,12 +111,6 @@ class mlp_share(base_model):
         xhat2 = F.softplus()
 
         return xhat1, xhat2
-
-
-
-
-
-
 
 
 class sourcesep_net_st_rnn(base_model): 
@@ -157,8 +149,6 @@ class sourcesep_net_st_rnn(base_model):
         xhat1 = F.softplus(self.sep_out1(hhat1))
         xhat2 = F.softplus(self.sep_out2(hhat2))
         return xhat1, xhat2
-
-
 
 
 class sourcesep_net_distemplate_ff_dis_ff(base_model): 

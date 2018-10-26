@@ -21,28 +21,39 @@ vis = visdom.Visdom(port=5800, server='http://cem@nmf.cs.illinois.edu', env='cem
                     use_incoming_socket=False)
 assert vis.check_connection()
 
-#from deep_sep_expr_shared import sep_run
-
-parser = argparse.ArgumentParser(description='Source separation experiments with GANs/Autoencoders')
-parser.add_argument('--lr', type=float, default=0.1, metavar='LR', help='learning rate (default: 0.001)')
+parser = argparse.ArgumentParser(description='Source separation experiments')
 parser.add_argument('--seed', type=int, default=1, metavar='S', help='random seed (default: 1)')
-parser.add_argument('--optimizer', type=str, default='RMSprop', metavar='optim', help='Optimizer')
+parser.add_argument('--optimizer', type=str, default='Adam', metavar='optim', help='Optimizer')
 
+# dataset sizes
 parser.add_argument('--ntrs', type=int, default=100)
 parser.add_argument('--ntsts', type=int, default=20)
+parser.add_argument('--nval', type=int, default=10)
 
+
+# model describers 
+parser.add_argument('--separator_nn', type=str, default='mlp', help='mlp, rnn')
+parser.add_argument('--attention', type=int, default=0, help='0 1')
+parser.add_argument('--num_layers', type=int, default=2, help='1 2')
+parser.add_argument('--separator_sharing', type=int, default=0, help='0 1')
+
+
+# hyper parameters to search over 
+parser.add_argument('--lr', type=float, default=0.001, metavar='LR', help='learning rate (default: 0.001)')
+parser.add_argument('--K', type=int, default=150)
+parser.add_argument('--Kdis', type=int, default=100)
+
+# others 
 parser.add_argument('--batch_size', type=int, default=10)
 parser.add_argument('--clip_norm', type=float, default=0.25)
 parser.add_argument('--plot_interval', type=int, default=100)
 parser.add_argument('--plot_training', type=int, default=1)
 parser.add_argument('--save_files', type=int, default=1)
-parser.add_argument('--EP_train', type=int, default=100)
+parser.add_argument('--EP_train', type=int, default=2000)
 parser.add_argument('--verbose', type=int, default=1)
-parser.add_argument('--K', type=int, default=150)
-parser.add_argument('--Kdis', type=int, default=100)
 parser.add_argument('--Kdisc', type=int, default=90)
 parser.add_argument('--notes', type=str, default='')
-parser.add_argument('--model', type=str, default='mlp', help='standard_ff, standard_rnn, dis_ff, dis_rnn')
+#parser.add_argument('--model', type=str, default='mlp', help='standard_ff, standard_rnn, dis_ff, dis_rnn')
 
 parser.add_argument('--dropout', type=float, default=0.5)
 parser.add_argument('--num_layers', type=int, default=2)
@@ -63,9 +74,13 @@ arguments.tr_directories = tr_directories
 arguments.tst_directories = tst_directories
 arguments.val_directories = val_directories
 
+pdb.set_trace()
 save_path = 'model_files'
 if not os.path.exists(save_path):
     os.mkdir(save_path)
+
+arguments.model = 'separatornn_{}_numlayers_{}_attention_{}_separator_{}'.format(arguments.separator_nn, arguments.attention, arguments.num_layers, arguments.separator_sharing)
+
     
 if arguments.model == 'mlp':
     snet = models.mlp(arguments, arguments.K, arguments.Kdis, 513)
@@ -82,7 +97,7 @@ else:
 #    c = 0.01
 #    nn.init.uniform(par, -c, c)
 snet.trainer(loader, opt, vis)
-torch.save(snet.state_dict(), save_path + '/' + arguments.model + '.t')
+#torch.save(snet.state_dict(), save_path + '/' + arguments.model + '.t')
 
 snet.eval()
 
