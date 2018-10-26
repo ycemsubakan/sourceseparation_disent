@@ -24,17 +24,15 @@ assert vis.check_connection()
 #from deep_sep_expr_shared import sep_run
 
 parser = argparse.ArgumentParser(description='Source separation experiments with GANs/Autoencoders')
-parser.add_argument('--lr', type=float, default=1e-5, metavar='LR',
-                    help='learning rate (default: 0.001)')
-parser.add_argument('--seed', type=int, default=1, metavar='S',
-                    help='random seed (default: 1)')
-parser.add_argument('--optimizer', type=str, default='RMSprop', metavar='optim',
-                    help='Optimizer')
+parser.add_argument('--lr', type=float, default=0.1, metavar='LR', help='learning rate (default: 0.001)')
+parser.add_argument('--seed', type=int, default=1, metavar='S', help='random seed (default: 1)')
+parser.add_argument('--optimizer', type=str, default='RMSprop', metavar='optim', help='Optimizer')
 
 parser.add_argument('--ntrs', type=int, default=100)
 parser.add_argument('--ntsts', type=int, default=20)
 
-parser.add_argument('--batch_size', type=int, default=10)
+parser.add_argument('--batch_size', type=int, default=64)
+parser.add_argument('--clip_norm', type=float, default=0.25)
 parser.add_argument('--plot_interval', type=int, default=100)
 parser.add_argument('--plot_training', type=int, default=1)
 parser.add_argument('--save_files', type=int, default=1)
@@ -84,7 +82,11 @@ elif arguments.model == 'disatt_ff_dis_ff':
 if arguments.cuda:
     snet = snet.cuda()
 
-opt = torch.optim.Adam(snet.parameters(), lr=arguments.lr)
+if arguments.optimizer=='sgd':
+    opt = torch.optim.SGD(snet.parameters(), lr=arguments.lr)
+else:
+    opt = torch.optim.Adam(snet.parameters(), lr=arguments.lr)
+
 #for par in snet.parameters():
 #    c = 0.01
 #    nn.init.uniform(par, -c, c)
