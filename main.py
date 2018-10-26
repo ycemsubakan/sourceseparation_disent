@@ -58,10 +58,10 @@ np.random.seed(arguments.seed)
 timestamp = round(time.time())
 arguments.timestamp = timestamp
 
-loader, tr_directories, tst_directories, side_directories, side_sources = ut.timit_prepare_data(arguments, folder='TRAIN', ntrs=arguments.ntrs, ntsts=arguments.ntsts)
+loader, tr_directories, tst_directories, val_directories = ut.timit_prepare_data(arguments, folder='TRAIN', ntrs=arguments.ntrs, ntsts=arguments.ntsts)
 arguments.tr_directories = tr_directories
 arguments.tst_directories = tst_directories
-arguments.side_directories = side_directories
+arguments.val_directories = val_directories
 
 save_path = 'model_files'
 if not os.path.exists(save_path):

@@ -75,6 +75,8 @@ class sourcesep_net_dis_ff_dis_rnn(nn.Module):
         errs = []
         for ep in range(EP):
             for i, dt in enumerate(loader):
+                opt.zero_grad()
+
                 xhat1, xhat2 = self.forward(dt)
                 
                 err = (dt[2] - xhat1).pow(2).mean() + (dt[3] - xhat2).pow(2).mean()
@@ -366,11 +368,11 @@ class sourcesep_net_st_ff(sourcesep_net_dis_ff_dis_rnn):
         self.dis_rnn = None
         self.pper = arguments.plot_interval
 
-        self.sep_rnn1 = nn.Linear(Linput, Linput)
-        self.sep_rnn2 = nn.Linear(Linput, Linput)
+        self.sep_rnn1 = nn.Linear(Linput, Krnn)
+        self.sep_rnn2 = nn.Linear(Linput, Krnn)
 
-        #self.sep_out1 = nn.Linear(2*Krnn, Linput)
-        #self.sep_out2 = nn.Linear(2*Krnn, Linput)
+        self.sep_out1 = nn.Linear(Krnn, Linput)
+        self.sep_out2 = nn.Linear(Krnn, Linput)
 
     def forward(self, dt):
 
@@ -378,12 +380,12 @@ class sourcesep_net_st_ff(sourcesep_net_dis_ff_dis_rnn):
             for i, d in enumerate(dt):
                 dt[i] = d.cuda()
 
-        xhat1 = F.softplus(self.sep_rnn1(dt[0]))
-        xhat2 = F.softplus(self.sep_rnn2(dt[0]))
+        hhat1 = (self.sep_rnn1(dt[0]))
+        hhat2 = (self.sep_rnn2(dt[0]))
 
         # get the network outputs
-        #xhat1 = F.softplus(self.sep_out1(hhat1))
-        #xhat2 = F.softplus(self.sep_out2(hhat2))
+        xhat1 = F.softplus(self.sep_out1(hhat1))
+        xhat2 = F.softplus(self.sep_out2(hhat2))
         return xhat1, xhat2
 
 
