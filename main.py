@@ -70,6 +70,8 @@ if arguments.model == 'st_ff':
 elif arguments.model == 'st_rnn':
     snet = models.sourcesep_net_st_rnn(arguments, arguments.K, arguments.Kdis, 513)
 
+elif arguments.model == 'distemplate_ff_dis_ff':
+    snet = models.sourcesep_net_distemplate_ff_dis_ff(arguments, arguments.K, arguments.Kdis, 513)
 elif arguments.model == 'dis_ff_dis_rnn':
     snet = models.sourcesep_net_dis_ff_dis_rnn(arguments, arguments.K, arguments.Kdis, 513)
 elif arguments.model == 'dis_ff_dis_ff':
