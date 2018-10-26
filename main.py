@@ -77,10 +77,9 @@ save_path = 'model_files'
 if not os.path.exists(save_path):
     os.mkdir(save_path)
 
-arguments.model = 'separatornn_{}_numlayers_{}_attention_{}_separator_{}'.format(arguments.separator_nn, arguments.attention, arguments.num_layers, arguments.separator_sharing)
-
+arguments.model = 'separatorarc_{}_attention_{}_separatorshare_{}'.format(arguments.separator_nn, arguments.attention, arguments.separator_sharing)
     
-if arguments.separator_nn == 'mlp':
+if arguments.model == 'separatorarc_mlp_attention_0_separatorshare_0':
     snet = models.mlp(arguments, arguments.K, arguments.Kdis, 513)
 
 if arguments.cuda:
