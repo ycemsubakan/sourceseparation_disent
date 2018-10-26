@@ -97,6 +97,12 @@ if not os.path.exists(results_path):
     os.mkdir(results_path)
 
 bss_evals = ut.timit_test_data(arguments, snet, directories=tst_directories)
+
+all_sdrs = []
+for bss_eval in bss_evals:
+    all_sdrs.append(bss_eval[0].mean())
+print('mean SDR {} model {}'.format(np.mean(all_sdrs), arguments.model))
+
 torch.save(bss_evals, results_path + '/' + arguments.model + '.bsseval')
 torch.save(arguments, results_path + '/' + arguments.model + '.args')
 
