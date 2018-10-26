@@ -5,6 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import pdb
 import numpy as np
+from nn import GatedDense
 
 class base_model(nn.Module):
     def __init__(self, arguments, K, Kdis, Linput):
@@ -73,7 +74,7 @@ class mlp(base_model):
             self.sep_1 = nn.Sequential(GatedDense(Linput, K, dropout=dropout), 
                                        GatedDense(K, Linput, dropout=dropout))
             self.sep_2 = nn.Sequential(GatedDense(Linput, K, dropout=dropout),
-                                       GatedDense(K, Linputi, dropout=dropout))
+                                       GatedDense(K, Linput, dropout=dropout))
 
     def forward(self, dt):
 
@@ -89,7 +90,7 @@ class mlp(base_model):
 
 class mlp_share(base_model): 
     def __init__(self, arguments, K, Kdis, Linput):
-        super(base_model, self).__init__(arguments, K, Kdis, Linput)
+        super(mlp_share, self).__init__(arguments, K, Kdis, Linput)
         dropout = arguments.dropout
 
         if arguments.num_layers==1:
@@ -115,7 +116,7 @@ class mlp_share(base_model):
 
 class lstm(base_model): 
     def __init__(self, arguments, K, Kdis, Linput):
-        super(base_model, self).__init__(arguments, K, Kdis, Linput)
+        super(lstm, self).__init__(arguments, K, Kdis, Linput)
         dropout=arguments.dropout
 
         self.sep_rnn1 = nn.LSTM(input_size = Linput,
@@ -132,8 +133,8 @@ class lstm(base_model):
                                batch_first=True,
                                bidirectional=True)
 
-        self.sep_out1 = GatedDense(2*Krnn, Linput, dropout=dropout)
-        self.sep_out2 = GatedDense(2*Krnn, Linput, dropout=dropout)
+        self.sep_out1 = GatedDense(2*K, Linput, dropout=dropout)
+        self.sep_out2 = GatedDense(2*K, Linput, dropout=dropout)
 
     def forward(self, dt):
 
@@ -149,6 +150,41 @@ class lstm(base_model):
         xhat2 = F.softplus(self.sep_out2(hhat2))
         
         return xhat1, xhat2
+
+
+class lstm_share(base_model): 
+    def __init__(self, arguments, K, Kdis, Linput):
+        super(lstm, self).__init__(arguments, K, Kdis, Linput)
+        dropout=arguments.dropout
+
+        self.sep_rnn = nn.LSTM(input_size = Linput,
+                               hidden_size = 2*K,
+                               num_layers=arguments.num_layers,
+                               dropout=dropout,
+                               batch_first=True,
+                               bidirectional=True)
+
+        self.sep_out = GatedDense(2*K, 2*Linput, dropout=dropout)
+
+    def forward(self, dt):
+
+        if self.arguments.cuda:
+            for i, d in enumerate(dt):
+                dt[i] = d.cuda()
+
+        h, _ = (self.sep_rnn(dt[0]))
+
+        pdb.set_trace() 
+
+        # get the network outputs
+        xhat1 = F.softplus(self.sep_out1(hhat1))
+        xhat2 = F.softplus(self.sep_out2(hhat2))
+        
+        return xhat1, xhat2
+
+
+
+
 
 
 class sourcesep_net_distemplate_ff_dis_ff(base_model): 
