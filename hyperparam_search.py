@@ -123,6 +123,8 @@ for cnum, config in enumerate(hyperparam_configs):
             else:
                 snet = models.mlp(arguments, arguments.K, arguments.Kdis, 513)
     if arguments.nn=='rnn':
+        if arguments.num_layers==3:
+            pass
         if arguments.att:
             if arguments.share:
                 pass
