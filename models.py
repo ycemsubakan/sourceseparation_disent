@@ -203,100 +203,125 @@ class lstm_share(base_model):
         return xhat1, xhat2
 
 
-#_______________________________________________________________________________
-
-
 ''' MLP with Attention '''
 class mlp_att(base_model): 
     def __init__(self, arguments, K, Kdis, Linput):
-        super(mlp, self).__init__(arguments, K, Kdis, Linput)
-        dropout = arguments.dropout
+        super(mlp_att, self).__init__(arguments, K, Kdis, Linput)
+       
+        dropout=self.arguments.dropout
+        self.ntemp = self.arguments.ntemp
 
-        if arguments.num_layers==1:
-            self.sep_1 = GatedDense(Linput, Linput, dropout=dropout)
-            self.sep_2 = GatedDense(Linput, Linput, dropout=dropout)
-        elif arguments.num_layers==2:
-            self.sep_1 = nn.Sequential(GatedDense(Linput, K, dropout=dropout), 
-                                       GatedDense(K, Linput, dropout=dropout))
-            self.sep_2 = nn.Sequential(GatedDense(Linput, K, dropout=dropout),
-                                       GatedDense(K, Linput, dropout=dropout))
-        elif arguments.num_layers==3:
-            self.sep_1 = nn.Sequential(GatedDense(Linput, K, dropout=dropout), 
-                                       GatedDense(K, K, dropout=dropout),
-                                       GatedDense(K, Linput, dropout=dropout))
-            self.sep_2 = nn.Sequential(GatedDense(Linput, K, dropout=dropout), 
-                                       GatedDense(K, K, dropout=dropout),
-                                       GatedDense(K, Linput, dropout=dropout))
-    def forward(self, dt):
+        self.dim_red = nn.Linear(Linput, K)
 
-        if self.arguments.cuda:
-            for i, d in enumerate(dt):
-                dt[i] = d.cuda()
-
-        xhat1 = F.softplus(self.sep_1(dt[0]))
-        xhat2 = F.softplus(self.sep_2(dt[0]))
-
-        return xhat1, xhat2
-
-
-class sourcesep_net_distemplate_ff_dis_ff(base_model): 
-    def __init__(self, arguments, Krnn, Kdis, Linput):
-        super(base_model, self).__init__(arguments, Krnn, Kdis, Linput)
-
-        self.dis_rnn = None
-        self.dim_red = nn.Linear(Linput, Krnn)
-
-        self.ntemp = 100
         self.templates1 = nn.Linear(self.ntemp, Kdis, bias=False)
         self.templates2 = nn.Linear(self.ntemp, Kdis, bias=False)
         
-        self.sel1 = nn.Linear(Krnn, self.ntemp)
-        self.sel2 = nn.Linear(Krnn, self.ntemp)
+        self.sel1 = nn.Linear(K, self.ntemp)
+        self.sel2 = nn.Linear(K, self.ntemp)
 
-        self.sep_rnn1 = nn.Linear(Kdis + Krnn, Kdis + Krnn)
-        self.sep_rnn2 = nn.Linear(Kdis + Krnn, Kdis + Krnn)
-        self.sep_out1 = nn.Linear(Kdis + Krnn, Linput)
-        self.sep_out2 = nn.Linear(Kdis + Krnn, Linput)
-
-        #self.bn1 = nn.BatchNorm1d(121, affine=False)
-        #self.bn2 = nn.BatchNorm1d(121, affine=False)
-
-     
+        if arguments.num_layers==1:
+            self.sep_1 = GatedDense(Kdis + K, Linput, dropout=dropout)
+            self.sep_2 = GatedDense(Kdis + K, Linput, dropout=dropout)
+        elif arguments.num_layers==2:
+            self.sep_1 = nn.Sequential(GatedDense(Kdis + K, Kdis + K, dropout=dropout), 
+                                       GatedDense(Kdis + K, Linput, dropout=dropout))
+            self.sep_2 = nn.Sequential(GatedDense(Kdis + K, Kdis + K, dropout=dropout), 
+                                       GatedDense(Kdis + K, Linput, dropout=dropout))
+        elif arguments.num_layers==3:
+            self.sep_1 = nn.Sequential(GatedDense(Kdis + K, Kdis + K, dropout=dropout), 
+                                       GatedDense(Kdis + K, Kdis + K, dropout=dropout),
+                                       GatedDense(Kdis + K, Linput, dropout=dropout))
+            self.sep_2 = nn.Sequential(GatedDense(Kdis + K, Kdis + K, dropout=dropout), 
+                                       GatedDense(Kdis + K, Kdis + K, dropout=dropout),
+                                       GatedDense(Kdis + K, Linput, dropout=dropout))
     def forward(self, dt):
         if self.arguments.cuda:
             for i, d in enumerate(dt):
                 dt[i] = d.cuda()
 
-        #ws1 = self.sel1(dt[0].mean(1)).t().unsqueeze(-1)
-        #ws2 = self.sel2(dt[0].mean(1)).t().unsqueeze(-1)
+        #pdb.set_trace()
         eye = torch.eye(self.ntemp).cuda()
         temps1 = self.templates1(eye).unsqueeze(1).unsqueeze(1)
         temps2 = self.templates2(eye).unsqueeze(1).unsqueeze(1)
 
         mix = (self.dim_red(dt[0]))
 
-        #ws1 = F.softmax((temps1*mix).sum(-1), dim=0)
-        #ws2 = F.softmax((temps2*mix).sum(-1), dim=0)
         ws1 = F.softmax(self.sel1(mix).permute(2, 0, 1), dim=0)
         ws2 = F.softmax(self.sel2(mix).permute(2, 0, 1), dim=0)
         
         f1 = (ws1.unsqueeze(-1)*temps1).sum(0)
         f2 = (ws2.unsqueeze(-1)*temps2).sum(0)
 
-        #f1 = torch.tanh(self.dis_rnn(wsh1))
-        #f2 = torch.tanh(self.dis_rnn2(wsh2))
         cat_s1 = torch.cat([mix, f1], dim=2)
         cat_s2 = torch.cat([mix, f2], dim=2)
 
-        #cat_s1 = self.cat_disvar(dt[0], f1)
-        #cat_s2 = self.cat_disvar(dt[0], f2)
-        
         # get the hhats
-        hhat1 = (self.sep_rnn1(cat_s1))
-        hhat2 = (self.sep_rnn2(cat_s2))
+        hhat1 = (self.sep_1(cat_s1))
+        hhat2 = (self.sep_2(cat_s2))
 
-        xhat1 = F.softplus(self.sep_out1(hhat1))
-        xhat2 = F.softplus(self.sep_out2(hhat2))
+        xhat1 = F.softplus(hhat1)
+        xhat2 = F.softplus(hhat2)
+
+        return xhat1, xhat2
+
+''' MLP with Attention and Shared Architecture'''
+class mlp_att_share(base_model): 
+    def __init__(self, arguments, K, Kdis, Linput):
+        super(mlp_att_share, self).__init__(arguments, K, Kdis, Linput)
+       
+        dropout=self.arguments.dropout
+        self.ntemp = self.arguments.ntemp
+
+        self.dim_red = nn.Linear(Linput, K)
+
+        self.templates1 = nn.Linear(self.ntemp, Kdis, bias=False)
+        self.templates2 = nn.Linear(self.ntemp, Kdis, bias=False)
+        
+        self.sel1 = nn.Linear(K, self.ntemp)
+        self.sel2 = nn.Linear(K, self.ntemp)
+
+        if arguments.num_layers==1:
+            self.sep_1 = GatedDense(Kdis + K, Linput, dropout=dropout)
+            self.sep_2 = GatedDense(Kdis + K, Linput, dropout=dropout)
+        elif arguments.num_layers==2:
+            self.sep_1 = nn.Sequential(GatedDense(Kdis + K, Kdis + K, dropout=dropout), 
+                                       GatedDense(Kdis + K, Linput, dropout=dropout))
+            self.sep_2 = nn.Sequential(GatedDense(Kdis + K, Kdis + K, dropout=dropout), 
+                                       GatedDense(Kdis + K, Linput, dropout=dropout))
+        elif arguments.num_layers==3:
+            self.sep_1 = nn.Sequential(GatedDense(Kdis + K, Kdis + K, dropout=dropout), 
+                                       GatedDense(Kdis + K, Kdis + K, dropout=dropout),
+                                       GatedDense(Kdis + K, Linput, dropout=dropout))
+            self.sep_2 = nn.Sequential(GatedDense(Kdis + K, Kdis + K, dropout=dropout), 
+                                       GatedDense(Kdis + K, Kdis + K, dropout=dropout),
+                                       GatedDense(Kdis + K, Linput, dropout=dropout))
+    def forward(self, dt):
+        if self.arguments.cuda:
+            for i, d in enumerate(dt):
+                dt[i] = d.cuda()
+
+        #pdb.set_trace()
+        eye = torch.eye(self.ntemp).cuda()
+        temps1 = self.templates1(eye).unsqueeze(1).unsqueeze(1)
+        temps2 = self.templates2(eye).unsqueeze(1).unsqueeze(1)
+
+        mix = (self.dim_red(dt[0]))
+
+        ws1 = F.softmax(self.sel1(mix).permute(2, 0, 1), dim=0)
+        ws2 = F.softmax(self.sel2(mix).permute(2, 0, 1), dim=0)
+        
+        f1 = (ws1.unsqueeze(-1)*temps1).sum(0)
+        f2 = (ws2.unsqueeze(-1)*temps2).sum(0)
+
+        cat_s1 = torch.cat([mix, f1], dim=2)
+        cat_s2 = torch.cat([mix, f2], dim=2)
+
+        # get the hhats
+        hhat1 = (self.sep_1(cat_s1))
+        hhat2 = (self.sep_2(cat_s2))
+
+        xhat1 = F.softplus(hhat1)
+        xhat2 = F.softplus(hhat2)
 
         return xhat1, xhat2
 

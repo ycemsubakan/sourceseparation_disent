@@ -40,7 +40,9 @@ parser.add_argument('--num_layers', type=int, default=2, help='1 2')
 # hyper parameters to search over 
 parser.add_argument('--lr', type=float, default=0.001, metavar='LR', help='learning rate (default: 0.001)')
 parser.add_argument('--K', type=int, default=150)
-parser.add_argument('--Kdis', type=int, default=100)
+parser.add_argument('--Kdis', type=int, default=250)
+parser.add_argument('--ntemp', type=int, default=100)
+
 
 # others 
 parser.add_argument('--batch_size', type=int, default=10)
@@ -52,7 +54,6 @@ parser.add_argument('--EP_train', type=int, default=2000)
 parser.add_argument('--verbose', type=int, default=1)
 parser.add_argument('--Kdisc', type=int, default=90)
 parser.add_argument('--notes', type=str, default='')
-#parser.add_argument('--model', type=str, default='mlp', help='standard_ff, standard_rnn, dis_ff, dis_rnn')
 
 parser.add_argument('--dropout', type=float, default=0.5)
 
@@ -87,7 +88,7 @@ if arguments.nn=='mlp':
         if arguments.share:
             pass
         else:
-            pass
+            snet = models.mlp_att(arguments, arguments.K, arguments.Kdis, 513)
     else:
         if arguments.share:
             snet = models.mlp_share(arguments, arguments.K, arguments.Kdis, 513)

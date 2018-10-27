@@ -22,7 +22,8 @@ def append_dirs(directories):
 
 def list_timit_dirs(folder='TRAIN'):
     home = '/' #os.path.expanduser('~')
-    p = os.path.join(home, 'data/lisa/data/timit/raw/TIMIT', folder)
+    #p = os.path.join(home, 'data/lisa/data/timit/raw/TIMIT', folder)
+    p = os.path.join(home, '/home/optimass/scratch/TIMIT', folder)
 
     directories = os.listdir(p)
     possible_dirs = []
