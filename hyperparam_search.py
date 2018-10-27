@@ -88,9 +88,6 @@ results_path = 'paramsearch_results'
 if not os.path.exists(results_path):
     os.mkdir(results_path)
 
-#arguments.model = '{}{}_att{}_share{}_gated{}_{}'.format(arguments.nn, arguments.num_layers, arguments.att, arguments.share, arguments.gated, arguments.act)
-
-
 arguments.model = 'arc_{}_att_{}_share_{}_{}'.format(arguments.nn, arguments.att, arguments.share, timestamp)
 
 # sample the configurations 
@@ -123,7 +120,7 @@ for cnum, config in enumerate(hyperparam_configs):
     if arguments.nn=='rnn':
         if arguments.att:
             if arguments.share:
-                pass
+                snet = models.lstm_att_share(arguments, arguments.K, arguments.Kdis, 513)
             else:
                 snet = models.lstm_att(arguments, arguments.K, arguments.Kdis, 513)
         else:
