@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import pdb
 import numpy as np
-from nn import GatedDense
+from nn import GatedDense, Dense
 
 class base_model(nn.Module):
     def __init__(self, arguments, K, Kdis, Linput):
@@ -14,6 +14,13 @@ class base_model(nn.Module):
         self.Linput = Linput
         self.arguments = arguments
         self.pper = arguments.plot_interval
+
+        if arguments.gated:
+            self.Dense = GatedDense
+        elif not arguments.gated:
+            self.Dense = Dense
+
+        self.activation=arguments.act
 
     def trainer(self, loader, opt, vis):
         
@@ -68,20 +75,20 @@ class mlp(base_model):
         dropout = arguments.dropout
 
         if arguments.num_layers==1:
-            self.sep_1 = GatedDense(Linput, Linput, dropout=dropout)
-            self.sep_2 = GatedDense(Linput, Linput, dropout=dropout)
+            self.sep_1 = self.Dense(Linput, Linput, dropout=dropout, activation=self.activation)
+            self.sep_2 = self.Dense(Linput, Linput, dropout=dropout, activation=self.activation)
         elif arguments.num_layers==2:
-            self.sep_1 = nn.Sequential(GatedDense(Linput, K, dropout=dropout), 
-                                       GatedDense(K, Linput, dropout=dropout))
-            self.sep_2 = nn.Sequential(GatedDense(Linput, K, dropout=dropout),
-                                       GatedDense(K, Linput, dropout=dropout))
+            self.sep_1 = nn.Sequential(self.Dense(Linput, K, dropout=dropout, activation=self.activation), 
+                                       self.Dense(K, Linput, dropout=dropout, activation=self.activation))
+            self.sep_2 = nn.Sequential(self.Dense(Linput, K, dropout=dropout, activation=self.activation),
+                                       self.Dense(K, Linput, dropout=dropout, activation=self.activation))
         elif arguments.num_layers==3:
-            self.sep_1 = nn.Sequential(GatedDense(Linput, K, dropout=dropout), 
-                                       GatedDense(K, K, dropout=dropout),
-                                       GatedDense(K, Linput, dropout=dropout))
-            self.sep_2 = nn.Sequential(GatedDense(Linput, K, dropout=dropout), 
-                                       GatedDense(K, K, dropout=dropout),
-                                       GatedDense(K, Linput, dropout=dropout))
+            self.sep_1 = nn.Sequential(self.Dense(Linput, K, dropout=dropout, activation=self.activation), 
+                                       self.Dense(K, K, dropout=dropout, activation=self.activation),
+                                       self.Dense(K, Linput, dropout=dropout, activation=self.activation))
+            self.sep_2 = nn.Sequential(self.Dense(Linput, K, dropout=dropout, activation=self.activation), 
+                                       self.Dense(K, K, dropout=dropout, activation=self.activation),
+                                       self.Dense(K, Linput, dropout=dropout, activation=self.activation))
     def forward(self, dt):
 
         if self.arguments.cuda:
@@ -102,14 +109,14 @@ class mlp_share(base_model):
         self.Linput = Linput
 
         if arguments.num_layers==1:
-            self.sep = GatedDense(Linput, 2*Linput, dropout=dropout)
+            self.sep = self.Dense(Linput, 2*Linput, dropout=dropout)
         elif arguments.num_layers==2:
-            self.sep = nn.Sequential(GatedDense(Linput, 2*K, dropout=dropout),
-                                     GatedDense(2*K, 2*Linput, dropout=dropout))
+            self.sep = nn.Sequential(self.Dense(Linput, 2*K, dropout=dropout, activation=self.activation),
+                                     self.Dense(2*K, 2*Linput, dropout=dropout, activation=self.activation))
         elif arguments.num_layers==3:
-            self.sep = nn.Sequential(GatedDense(Linput, 2*K, dropout=dropout),
-                                     GatedDense(2*K, 2*K, dropout=dropout),
-                                     GatedDense(2*K, 2*Linput, dropout=dropout))
+            self.sep = nn.Sequential(self.Dense(Linput, 2*K, dropout=dropout, activation=self.activation),
+                                     self.Dense(2*K, 2*K, dropout=dropout, activation=self.activation),
+                                     self.Dense(2*K, 2*Linput, dropout=dropout, activation=self.activation))
     def forward(self, dt):
 
         if self.arguments.cuda:
@@ -144,13 +151,13 @@ class lstm(base_model):
                                bidirectional=True)
 
         if arguments.num_layers==1:
-            self.sep_out1 = GatedDense(2*K, Linput, dropout=dropout)
-            self.sep_out2 = GatedDense(2*K, Linput, dropout=dropout)
+            self.sep_out1 = self.Dense(2*K, Linput, dropout=dropout, activation=self.activation)
+            self.sep_out2 = self.Dense(2*K, Linput, dropout=dropout, activation=self.activation)
         elif arguments.num_layers==2:
-            self.sep_out1 = nn.Sequential(GatedDense(2*K, K, dropout=dropout), 
-                                          GatedDense(K, Linput, dropout=dropout))
-            self.sep_out2 = nn.Sequential(GatedDense(2*K, K, dropout=dropout),
-                                          GatedDense(K, Linput, dropout=dropout))
+            self.sep_out1 = nn.Sequential(self.Dense(2*K, K, dropout=dropout, activation=self.activation), 
+                                          self.Dense(K, Linput, dropout=dropout, activation=self.activation))
+            self.sep_out2 = nn.Sequential(self.Dense(2*K, K, dropout=dropout, activation=self.activation),
+                                          self.Dense(K, Linput, dropout=dropout, activation=self.activation))
 
     def forward(self, dt):
 
@@ -180,12 +187,11 @@ class lstm_share(base_model):
                                batch_first=True,
                                bidirectional=True)
 
-        self.sep_out = GatedDense(2*K, 2*Linput, dropout=dropout)
         if arguments.num_layers==1:
-            self.sep_out = GatedDense(4*K, 2*Linput, dropout=dropout)
+            self.sep_out = self.Dense(4*K, 2*Linput, dropout=dropout, activation=self.activation)
         elif arguments.num_layers==2:
-            self.sep_out = nn.Sequential(GatedDense(4*K, 2*K, dropout=dropout), 
-                                       GatedDense(2*K, 2*Linput, dropout=dropout))
+            self.sep_out = nn.Sequential(self.Dense(4*K, 2*K, dropout=dropout, activation=self.activation), 
+                                         self.Dense(2*K, 2*Linput, dropout=dropout, activation=self.activation))
 
     def forward(self, dt):
 
@@ -211,7 +217,8 @@ class mlp_att(base_model):
         dropout=self.arguments.dropout
         self.ntemp = self.arguments.ntemp
 
-        self.dim_red = nn.Linear(Linput, K)
+        self.dim_red1 = nn.Linear(Linput, K)
+        self.dim_red2 = nn.Linear(Linput, K)
 
         self.templates1 = nn.Linear(self.ntemp, Kdis, bias=False)
         self.templates2 = nn.Linear(self.ntemp, Kdis, bias=False)
@@ -220,20 +227,20 @@ class mlp_att(base_model):
         self.sel2 = nn.Linear(K, self.ntemp)
 
         if arguments.num_layers==1:
-            self.sep_1 = GatedDense(Kdis + K, Linput, dropout=dropout)
-            self.sep_2 = GatedDense(Kdis + K, Linput, dropout=dropout)
+            self.sep_1 = self.Dense(Kdis + K, Linput, dropout=dropout, activation=self.activation)
+            self.sep_2 = self.Dense(Kdis + K, Linput, dropout=dropout, activation=self.activation)
         elif arguments.num_layers==2:
-            self.sep_1 = nn.Sequential(GatedDense(Kdis + K, Kdis + K, dropout=dropout), 
-                                       GatedDense(Kdis + K, Linput, dropout=dropout))
-            self.sep_2 = nn.Sequential(GatedDense(Kdis + K, Kdis + K, dropout=dropout), 
-                                       GatedDense(Kdis + K, Linput, dropout=dropout))
+            self.sep_1 = nn.Sequential(self.Dense(Kdis + K, Kdis + K, dropout=dropout, activation=self.activation), 
+                                       self.Dense(Kdis + K, Linput, dropout=dropout, activation=self.activation))
+            self.sep_2 = nn.Sequential(self.Dense(Kdis + K, Kdis + K, dropout=dropout, activation=self.activation), 
+                                       self.Dense(Kdis + K, Linput, dropout=dropout, activation=self.activation))
         elif arguments.num_layers==3:
-            self.sep_1 = nn.Sequential(GatedDense(Kdis + K, Kdis + K, dropout=dropout), 
-                                       GatedDense(Kdis + K, Kdis + K, dropout=dropout),
-                                       GatedDense(Kdis + K, Linput, dropout=dropout))
-            self.sep_2 = nn.Sequential(GatedDense(Kdis + K, Kdis + K, dropout=dropout), 
-                                       GatedDense(Kdis + K, Kdis + K, dropout=dropout),
-                                       GatedDense(Kdis + K, Linput, dropout=dropout))
+            self.sep_1 = nn.Sequential(self.Dense(Kdis + K, Kdis + K, dropout=dropout, activation=self.activation), 
+                                       self.Dense(Kdis + K, Kdis + K, dropout=dropout, activation=self.activation),
+                                       self.Dense(Kdis + K, Linput, dropout=dropout, activation=self.activation))
+            self.sep_2 = nn.Sequential(self.Dense(Kdis + K, Kdis + K, dropout=dropout, activation=self.activation), 
+                                       self.Dense(Kdis + K, Kdis + K, dropout=dropout, activation=self.activation),
+                                       self.Dense(Kdis + K, Linput, dropout=dropout, activation=self.activation))
     def forward(self, dt):
         if self.arguments.cuda:
             for i, d in enumerate(dt):
@@ -244,16 +251,17 @@ class mlp_att(base_model):
         temps1 = self.templates1(eye).unsqueeze(1).unsqueeze(1)
         temps2 = self.templates2(eye).unsqueeze(1).unsqueeze(1)
 
-        mix = (self.dim_red(dt[0]))
+        mix1 = (self.dim_red1(dt[0]))
+        mix2 = (self.dim_red2(dt[0]))
 
-        ws1 = F.softmax(self.sel1(mix).permute(2, 0, 1), dim=0)
-        ws2 = F.softmax(self.sel2(mix).permute(2, 0, 1), dim=0)
+        ws1 = F.softmax(self.sel1(mix1).permute(2, 0, 1), dim=0)
+        ws2 = F.softmax(self.sel2(mix2).permute(2, 0, 1), dim=0)
         
         f1 = (ws1.unsqueeze(-1)*temps1).sum(0)
         f2 = (ws2.unsqueeze(-1)*temps2).sum(0)
 
-        cat_s1 = torch.cat([mix, f1], dim=2)
-        cat_s2 = torch.cat([mix, f2], dim=2)
+        cat_s1 = torch.cat([mix1, f1], dim=2)
+        cat_s2 = torch.cat([mix2, f2], dim=2)
 
         # get the hhats
         hhat1 = (self.sep_1(cat_s1))
@@ -269,59 +277,47 @@ class mlp_att_share(base_model):
     def __init__(self, arguments, K, Kdis, Linput):
         super(mlp_att_share, self).__init__(arguments, K, Kdis, Linput)
        
+        self.Linput = Linput
         dropout=self.arguments.dropout
         self.ntemp = self.arguments.ntemp
 
-        self.dim_red = nn.Linear(Linput, K)
+        self.dim_red = nn.Linear(Linput, 2*K)
 
-        self.templates1 = nn.Linear(self.ntemp, Kdis, bias=False)
-        self.templates2 = nn.Linear(self.ntemp, Kdis, bias=False)
+        self.templates = nn.Linear(2*self.ntemp, Kdis, bias=False)
         
-        self.sel1 = nn.Linear(K, self.ntemp)
-        self.sel2 = nn.Linear(K, self.ntemp)
+        self.sel = nn.Linear(K, 2*self.ntemp)
 
         if arguments.num_layers==1:
-            self.sep_1 = GatedDense(Kdis + K, Linput, dropout=dropout)
-            self.sep_2 = GatedDense(Kdis + K, Linput, dropout=dropout)
+            self.sep = self.Dense( 2*(Kdis + K), 2*Linput, dropout=dropout, activation=self.activation)
         elif arguments.num_layers==2:
-            self.sep_1 = nn.Sequential(GatedDense(Kdis + K, Kdis + K, dropout=dropout), 
-                                       GatedDense(Kdis + K, Linput, dropout=dropout))
-            self.sep_2 = nn.Sequential(GatedDense(Kdis + K, Kdis + K, dropout=dropout), 
-                                       GatedDense(Kdis + K, Linput, dropout=dropout))
+            self.sep = nn.Sequential(self.Dense(2*(Kdis + K), 2*(Kdis + K), dropout=dropout, activation=self.activation), 
+                                     self.Dense(2*(Kdis + K), 2*Linput, dropout=dropout, activation=self.activation))
         elif arguments.num_layers==3:
-            self.sep_1 = nn.Sequential(GatedDense(Kdis + K, Kdis + K, dropout=dropout), 
-                                       GatedDense(Kdis + K, Kdis + K, dropout=dropout),
-                                       GatedDense(Kdis + K, Linput, dropout=dropout))
-            self.sep_2 = nn.Sequential(GatedDense(Kdis + K, Kdis + K, dropout=dropout), 
-                                       GatedDense(Kdis + K, Kdis + K, dropout=dropout),
-                                       GatedDense(Kdis + K, Linput, dropout=dropout))
+            self.sep = nn.Sequential(self.Dense(2*(Kdis + K), 2*(Kdis + K), dropout=dropout, activation=self.activation), 
+                                       self.Dense(2*(Kdis + K), 2*(Kdis + K), dropout=dropout, activation=self.activation),
+                                       self.Dense(2*(Kdis + K), 2*Linput, dropout=dropout, activation=self.activation))
     def forward(self, dt):
         if self.arguments.cuda:
             for i, d in enumerate(dt):
                 dt[i] = d.cuda()
 
         #pdb.set_trace()
-        eye = torch.eye(self.ntemp).cuda()
-        temps1 = self.templates1(eye).unsqueeze(1).unsqueeze(1)
-        temps2 = self.templates2(eye).unsqueeze(1).unsqueeze(1)
+        eye = torch.eye(2*self.ntemp).cuda()
+        temps = self.templates(eye).unsqueeze(1).unsqueeze(1)
 
         mix = (self.dim_red(dt[0]))
 
-        ws1 = F.softmax(self.sel1(mix).permute(2, 0, 1), dim=0)
-        ws2 = F.softmax(self.sel2(mix).permute(2, 0, 1), dim=0)
+        ws = F.softmax(self.sel(mix).permute(2, 0, 1), dim=0)
         
-        f1 = (ws1.unsqueeze(-1)*temps1).sum(0)
-        f2 = (ws2.unsqueeze(-1)*temps2).sum(0)
+        f = (ws.unsqueeze(-1)*temps).sum(0)
 
-        cat_s1 = torch.cat([mix, f1], dim=2)
-        cat_s2 = torch.cat([mix, f2], dim=2)
+        cat_s = torch.cat([mix, f], dim=2)
 
         # get the hhats
-        hhat1 = (self.sep_1(cat_s1))
-        hhat2 = (self.sep_2(cat_s2))
+        hhat = (self.sep(cat_s))
 
-        xhat1 = F.softplus(hhat1)
-        xhat2 = F.softplus(hhat2)
+        xhat1 = F.softplus(h[:,:,:self.Linput])
+        xhat2 = F.softplus(h[:,:,self.Linput:])
 
         return xhat1, xhat2
 
