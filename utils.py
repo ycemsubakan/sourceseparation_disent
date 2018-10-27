@@ -197,7 +197,7 @@ def sample_hyperparam_configs(arguments, Nconfigs=100):
     K = np.random.choice([100, 150, 200, 250, 300], Nconfigs, replace=True).reshape(-1, 1)
     Kdis = np.random.choice([100, 150, 200, 250, 300], Nconfigs, replace=True).reshape(-1, 1)
     if arguments.nn == 'mlp':
-        num_layers = np.random.choice([1, 2, 3], Nconfigs, replace=True).reshape(-1, 1)
+        num_layers = np.random.choice([2, 3], Nconfigs, replace=True).reshape(-1, 1)
     elif arguments.nn == 'rnn':
         num_layers = np.random.choice([1, 2], Nconfigs, replace=True).reshape(-1, 1)
     dropout = np.random.choice([0.0, 0.1, 0.2], Nconfigs, replace=True).reshape(-1, 1)

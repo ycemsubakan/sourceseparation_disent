@@ -56,9 +56,9 @@ parser.add_argument('--EP_train', type=int, default=2000)
 parser.add_argument('--verbose', type=int, default=1)
 parser.add_argument('--Kdisc', type=int, default=90)
 parser.add_argument('--notes', type=str, default='')
-parser.add_argument('--val_intervals', type=int, default=100)
+parser.add_argument('--val_intervals', type=int, default=50)
 
-parser.add_argument('--dropout', type=float, default=0.5)
+parser.add_argument('--dropout', type=float, default=0.2)
 
 arguments = parser.parse_args()
 
