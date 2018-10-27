@@ -148,6 +148,9 @@ class mlp_share(base_model):
 class lstm(base_model): 
     def __init__(self, arguments, K, Kdis, Linput):
         super(lstm, self).__init__(arguments, K, Kdis, Linput)
+        
+        assert arguments.num_layers < 3
+
         dropout=arguments.dropout
 
         self.sep_rnn1 = nn.LSTM(input_size = Linput,
@@ -193,6 +196,7 @@ class lstm_share(base_model):
     def __init__(self, arguments, K, Kdis, Linput):
         super(lstm_share, self).__init__(arguments, K, Kdis, Linput)
         dropout=arguments.dropout
+        assert arguments.num_layers < 3
 
         self.sep_rnn = nn.LSTM(input_size = Linput,
                                hidden_size = 2*K,
