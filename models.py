@@ -61,7 +61,7 @@ class base_model(nn.Module):
         cat_dt = torch.cat(lst, dim=2)
         return cat_dt
 
-
+''' MLP '''
 class mlp(base_model): 
     def __init__(self, arguments, K, Kdis, Linput):
         super(mlp, self).__init__(arguments, K, Kdis, Linput)
@@ -75,7 +75,13 @@ class mlp(base_model):
                                        GatedDense(K, Linput, dropout=dropout))
             self.sep_2 = nn.Sequential(GatedDense(Linput, K, dropout=dropout),
                                        GatedDense(K, Linput, dropout=dropout))
-
+        elif arguments.num_layers==3:
+            self.sep_1 = nn.Sequential(GatedDense(Linput, K, dropout=dropout), 
+                                       GatedDense(K, K, dropout=dropout),
+                                       GatedDense(K, Linput, dropout=dropout))
+            self.sep_2 = nn.Sequential(GatedDense(Linput, K, dropout=dropout), 
+                                       GatedDense(K, K, dropout=dropout),
+                                       GatedDense(K, Linput, dropout=dropout))
     def forward(self, dt):
 
         if self.arguments.cuda:
@@ -88,17 +94,22 @@ class mlp(base_model):
         return xhat1, xhat2
 
 
+''' MLP with Shared Architecture '''
 class mlp_share(base_model): 
     def __init__(self, arguments, K, Kdis, Linput):
         super(mlp_share, self).__init__(arguments, K, Kdis, Linput)
         dropout = arguments.dropout
+        self.Linput = Linput
 
         if arguments.num_layers==1:
             self.sep = GatedDense(Linput, 2*Linput, dropout=dropout)
         elif arguments.num_layers==2:
             self.sep = nn.Sequential(GatedDense(Linput, 2*K, dropout=dropout),
-                                       GatedDense(2*K, Linputi, dropout=dropout))
-
+                                     GatedDense(2*K, 2*Linput, dropout=dropout))
+        elif arguments.num_layers==3:
+            self.sep = nn.Sequential(GatedDense(Linput, 2*K, dropout=dropout),
+                                     GatedDense(2*K, 2*K, dropout=dropout),
+                                     GatedDense(2*K, 2*Linput, dropout=dropout))
     def forward(self, dt):
 
         if self.arguments.cuda:
@@ -107,13 +118,12 @@ class mlp_share(base_model):
 
         h = self.sep(dt[0])
 
-        pdb.set_trace()
-        xhat1 = F.softplus()
-        xhat2 = F.softplus()
+        xhat1 = F.softplus(h[:,:,:self.Linput])
+        xhat2 = F.softplus(h[:,:,self.Linput:])
 
         return xhat1, xhat2
 
-
+''' LSTM '''
 class lstm(base_model): 
     def __init__(self, arguments, K, Kdis, Linput):
         super(lstm, self).__init__(arguments, K, Kdis, Linput)
@@ -133,8 +143,14 @@ class lstm(base_model):
                                batch_first=True,
                                bidirectional=True)
 
-        self.sep_out1 = GatedDense(2*K, Linput, dropout=dropout)
-        self.sep_out2 = GatedDense(2*K, Linput, dropout=dropout)
+        if arguments.num_layers==1:
+            self.sep_out1 = GatedDense(2*K, Linput, dropout=dropout)
+            self.sep_out2 = GatedDense(2*K, Linput, dropout=dropout)
+        elif arguments.num_layers==2:
+            self.sep_out1 = nn.Sequential(GatedDense(2*K, K, dropout=dropout), 
+                                          GatedDense(K, Linput, dropout=dropout))
+            self.sep_out2 = nn.Sequential(GatedDense(2*K, K, dropout=dropout),
+                                          GatedDense(K, Linput, dropout=dropout))
 
     def forward(self, dt):
 
@@ -151,10 +167,10 @@ class lstm(base_model):
         
         return xhat1, xhat2
 
-
+''' LSTM with Shared Architecture '''
 class lstm_share(base_model): 
     def __init__(self, arguments, K, Kdis, Linput):
-        super(lstm, self).__init__(arguments, K, Kdis, Linput)
+        super(lstm_share, self).__init__(arguments, K, Kdis, Linput)
         dropout=arguments.dropout
 
         self.sep_rnn = nn.LSTM(input_size = Linput,
@@ -165,6 +181,11 @@ class lstm_share(base_model):
                                bidirectional=True)
 
         self.sep_out = GatedDense(2*K, 2*Linput, dropout=dropout)
+        if arguments.num_layers==1:
+            self.sep_out = GatedDense(4*K, 2*Linput, dropout=dropout)
+        elif arguments.num_layers==2:
+            self.sep_out = nn.Sequential(GatedDense(4*K, 2*K, dropout=dropout), 
+                                       GatedDense(2*K, 2*Linput, dropout=dropout))
 
     def forward(self, dt):
 
@@ -173,18 +194,49 @@ class lstm_share(base_model):
                 dt[i] = d.cuda()
 
         h, _ = (self.sep_rnn(dt[0]))
-
-        pdb.set_trace() 
-
-        # get the network outputs
-        xhat1 = F.softplus(self.sep_out1(hhat1))
-        xhat2 = F.softplus(self.sep_out2(hhat2))
         
+        h = self.sep_out(h)
+ 
+        xhat1 = F.softplus(h[:,:,:self.Linput])
+        xhat2 = F.softplus(h[:,:,self.Linput:])
+
         return xhat1, xhat2
 
 
+#_______________________________________________________________________________
 
 
+''' MLP with Attention '''
+class mlp_att(base_model): 
+    def __init__(self, arguments, K, Kdis, Linput):
+        super(mlp, self).__init__(arguments, K, Kdis, Linput)
+        dropout = arguments.dropout
+
+        if arguments.num_layers==1:
+            self.sep_1 = GatedDense(Linput, Linput, dropout=dropout)
+            self.sep_2 = GatedDense(Linput, Linput, dropout=dropout)
+        elif arguments.num_layers==2:
+            self.sep_1 = nn.Sequential(GatedDense(Linput, K, dropout=dropout), 
+                                       GatedDense(K, Linput, dropout=dropout))
+            self.sep_2 = nn.Sequential(GatedDense(Linput, K, dropout=dropout),
+                                       GatedDense(K, Linput, dropout=dropout))
+        elif arguments.num_layers==3:
+            self.sep_1 = nn.Sequential(GatedDense(Linput, K, dropout=dropout), 
+                                       GatedDense(K, K, dropout=dropout),
+                                       GatedDense(K, Linput, dropout=dropout))
+            self.sep_2 = nn.Sequential(GatedDense(Linput, K, dropout=dropout), 
+                                       GatedDense(K, K, dropout=dropout),
+                                       GatedDense(K, Linput, dropout=dropout))
+    def forward(self, dt):
+
+        if self.arguments.cuda:
+            for i, d in enumerate(dt):
+                dt[i] = d.cuda()
+
+        xhat1 = F.softplus(self.sep_1(dt[0]))
+        xhat2 = F.softplus(self.sep_2(dt[0]))
+
+        return xhat1, xhat2
 
 
 class sourcesep_net_distemplate_ff_dis_ff(base_model): 

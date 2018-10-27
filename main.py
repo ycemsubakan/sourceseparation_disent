@@ -32,11 +32,10 @@ parser.add_argument('--nval', type=int, default=10)
 
 
 # model describers 
-parser.add_argument('--separator_nn', type=str, default='mlp', help='mlp, rnn')
-parser.add_argument('--attention', type=int, default=0, help='0 1')
+parser.add_argument('--nn', type=str, default='mlp', help='mlp, rnn')
+parser.add_argument('--att', type=int, default=0, help='0 1')
+parser.add_argument('--share', type=int, default=0, help='0 1')
 parser.add_argument('--num_layers', type=int, default=2, help='1 2')
-parser.add_argument('--separator_sharing', type=int, default=0, help='0 1')
-
 
 # hyper parameters to search over 
 parser.add_argument('--lr', type=float, default=0.001, metavar='LR', help='learning rate (default: 0.001)')
@@ -68,7 +67,10 @@ np.random.seed(arguments.seed)
 timestamp = round(time.time())
 arguments.timestamp = timestamp
 
-loader, tr_directories, tst_directories, val_directories = ut.timit_prepare_data(arguments, folder='TRAIN', ntrs=arguments.ntrs, ntsts=arguments.ntsts)
+loader, tr_directories, tst_directories, val_directories = ut.timit_prepare_data(arguments, 
+                                                                                 folder='TRAIN', 
+                                                                                 ntrs=arguments.ntrs, 
+                                                                                 ntsts=arguments.ntsts)
 arguments.tr_directories = tr_directories
 arguments.tst_directories = tst_directories
 arguments.val_directories = val_directories
@@ -77,10 +79,31 @@ save_path = 'model_files'
 if not os.path.exists(save_path):
     os.mkdir(save_path)
 
-arguments.model = 'separatorarc_{}_attention_{}_separatorshare_{}'.format(arguments.separator_nn, arguments.attention, arguments.separator_sharing)
-    
-if arguments.model == 'separatorarc_mlp_attention_0_separatorshare_0':
-    snet = models.mlp(arguments, arguments.K, arguments.Kdis, 513)
+arguments.model = '{}{}_att{}_share{}'.format(arguments.nn, arguments.num_layers, arguments.att, arguments.share)
+  
+# model definition:  
+if arguments.nn=='mlp':
+    if arguments.att:
+        if arguments.share:
+            pass
+        else:
+            pass
+    else:
+        if arguments.share:
+            snet = models.mlp_share(arguments, arguments.K, arguments.Kdis, 513)
+        else:
+            snet = models.mlp(arguments, arguments.K, arguments.Kdis, 513)
+if arguments.nn=='rnn':
+    if arguments.att:
+        if arguments.share:
+            pass
+        else:
+            pass
+    else:
+        if arguments.share:
+            snet = models.lstm_share(arguments, arguments.K, arguments.Kdis, 513)
+        else:
+            snet = models.lstm(arguments, arguments.K, arguments.Kdis, 513)
 
 if arguments.cuda:
     snet = snet.cuda()
