@@ -19,6 +19,7 @@ import models
 import os
 
 timestamp = str(datetime.datetime.now()).replace(' ','')
+pdb.set_trace()
 
 vis = visdom.Visdom(port=5800, server='http://cem@nmf.cs.illinois.edu', env='cem_dev',
                     use_incoming_socket=False)
