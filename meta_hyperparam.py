@@ -6,9 +6,8 @@ import sys
 
 
 NN    = ['mlp', 'rnn']
-NN    = ['mlp']
-ATT   = [1]
-SHARE = [1]
+ATT   = [0, 1]
+SHARE = [0, 1]
 
 for nn in NN:
     for att in ATT:
