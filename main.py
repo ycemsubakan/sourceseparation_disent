@@ -35,7 +35,7 @@ parser.add_argument('--nval', type=int, default=10)
 parser.add_argument('--nn', type=str, default='mlp', help='mlp, rnn')
 parser.add_argument('--att', type=int, default=0, help='0 1')
 parser.add_argument('--share', type=int, default=0, help='0 1')
-parser.add_argument('--num_layers', type=int, default=2, help='1 2')
+parser.add_argument('--num_layers', type=int, default=2, help='1 2 3')
 
 # hyper parameters to search over 
 parser.add_argument('--lr', type=float, default=0.001, metavar='LR', help='learning rate (default: 0.001)')

@@ -93,9 +93,9 @@ def timit_prepare_data(arguments, folder='TRAIN', ntrs=1000, ntsts=20, nval=10):
     train_path = 'tr_data.t'
     if 1 & os.path.exists(train_path):
         temp  = torch.load(train_path)
-        tr_data, tr_directories, tst_directories, val_directories, temp_sides = temp
+        tr_data, tr_directories, tst_directories, val_directories = temp
         #tst_directories = tst_directories[:ntsts]
-        source1side_all_cat, source2side_all_cat = temp_sides 
+        #source1side_all_cat, source2side_all_cat = temp_sides 
     else: 
         all_directories = np.array(list_timit_dirs(folder))
         Ncombs = all_directories.shape[0]
