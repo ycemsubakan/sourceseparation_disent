@@ -14,6 +14,7 @@ import timit_utilities as tu
 import scipy as sp
 import sklearn as skt
 import itertools as it
+import copy
 
 def append_dirs(directories):
     all_dirs = [ ''.join(dr) for dr in directories]
@@ -75,6 +76,17 @@ def get_audio(arguments, xhat1, xhat2, dt):
                         win_length=arguments.win_length)
     return audiohat1, audiohat2
 
+def filter_directories(tr_dirs, tofilter_dirs, all_dirs):
+    # function to filter out overlapping directories
+    for i, tofilter in enumerate(tofilter_dirs): 
+        #print('filtering {}'.format(i))
+        while (tofilter[1] in tr_dirs[:, 1]) or (tofilter[2] in tr_dirs[:, 2]):
+            ind = np.random.choice(all_dirs.shape[0], 1) 
+            tofilter = all_dirs[ind].squeeze()
+        tofilter_dirs[i] = tofilter 
+    return tofilter_dirs
+            
+
 
 def timit_prepare_data(arguments, folder='TRAIN', ntrs=1000, ntsts=20, nval=10):
     train_path = 'tr_data.t'
@@ -84,15 +96,22 @@ def timit_prepare_data(arguments, folder='TRAIN', ntrs=1000, ntsts=20, nval=10):
         #tst_directories = tst_directories[:ntsts]
         source1side_all_cat, source2side_all_cat = temp_sides 
     else: 
-        directories = (list_timit_dirs(folder))
-        Ncombs = len(directories)
-        inds = np.sort(np.random.choice(Ncombs, size=ntrs+ntsts+nside, replace=False))
-        directories = np.array(directories)[inds]
+        all_directories = np.array(list_timit_dirs(folder))
+        Ncombs = all_directories.shape[0]
+        inds = np.sort(np.random.choice(Ncombs, size=ntrs+ntsts+nval, replace=False))
+        directories = np.array(all_directories)[inds]
 
         tr_directories = directories[:ntrs]
         tst_directories = directories[ntrs:(ntrs+ntsts)]
         val_directories = directories[(ntrs+ntsts):]
         #all_directories = append_dirs(directories) 
+        #old = copy.deepcopy(tst_directories)
+        tst_directories = filter_directories(tr_directories, tst_directories, 
+                                             all_directories)
+        val_directories = filter_directories(np.concatenate([tr_directories, tst_directories],0),
+                                             val_directories, 
+                                             all_directories)
+
 
         mix_all = []
         mix_phaseall = []

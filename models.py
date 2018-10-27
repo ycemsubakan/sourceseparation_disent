@@ -68,7 +68,7 @@ class mlp(base_model):
         dropout = arguments.dropout
 
         if arguments.num_layers==1:
-            self.sep_1 = GatedDensedr(Linput, Linput, dropout=dropout)
+            self.sep_1 = GatedDense(Linput, Linput, dropout=dropout)
             self.sep_2 = GatedDense(Linput, Linput, dropout=dropout)
         elif arguments.num_layers==2:
             self.sep_1 = nn.Sequential(GatedDense(Linput, K, dropout=dropout), 
