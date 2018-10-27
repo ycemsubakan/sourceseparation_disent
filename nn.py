@@ -36,27 +36,40 @@ class LockedDropout(nn.Module):
 
 ''' Neat way of doing  ResNet while changing the dimension of the representation'''
 class GatedDense(nn.Module):
-    def __init__(self, input_size, output_size, dropout=0, activation=None):
+    def __init__(self, input_size, output_size, dropout=0, activation='relu'):
         super(GatedDense, self).__init__()
 
-        self.activation = activation
-        self.sigmoid = nn.Sigmoid()
+        self.activation = nn.ReLU() if activation=='relu' else nn.Sigmoid()
+
         self.h = nn.Linear(input_size, output_size)
         self.g = nn.Linear(input_size, output_size)
         self.drop = nn.Dropout(p=dropout)
 
     def forward(self, x):
         h = self.h(x)
-        if self.activation is not None:
-            h = self.activation( self.h( x ) )
 
-        g = self.sigmoid( self.g( x ) )
+        g = self.activation(self.g(x))
 
         out = h * g 
         out = self.drop(out)
 
-        return h * g
+        return out
 
+class Dense(nn.Module):
+    def __init__(self, input_size, output_size, dropout=0, activation='relu'):
+        super(Dense, self).__init__()
+
+        self.activation = nn.ReLU() if activation=='relu' else nn.Sigmoid()
+        self.h = nn.Linear(input_size, output_size)
+        self.drop = nn.Dropout(p=dropout)
+
+    def forward(self, x):
+        h = self.activation(self.h(x))
+
+        out = h 
+        out = self.drop(out)
+
+        return out
 
 # RNN Cell
 # ----------------------------------------------------------------------------------

@@ -35,7 +35,9 @@ parser.add_argument('--nval', type=int, default=10)
 parser.add_argument('--nn', type=str, default='mlp', help='mlp, rnn')
 parser.add_argument('--att', type=int, default=0, help='0 1')
 parser.add_argument('--share', type=int, default=0, help='0 1')
+parser.add_argument('--gated', type=int, default=0, help='0 1')
 parser.add_argument('--num_layers', type=int, default=2, help='1 2 3')
+parser.add_argument('--act', type=str, default='relu', help='relu, sigmoid')
 
 # hyper parameters to search over 
 parser.add_argument('--lr', type=float, default=0.001, metavar='LR', help='learning rate (default: 0.001)')
@@ -81,13 +83,13 @@ save_path = 'model_files'
 if not os.path.exists(save_path):
     os.mkdir(save_path)
 
-arguments.model = '{}{}_att{}_share{}'.format(arguments.nn, arguments.num_layers, arguments.att, arguments.share)
+arguments.model = '{}{}_att{}_share{}_gated{}_{}'.format(arguments.nn, arguments.num_layers, arguments.att, arguments.share, arguments.gated, arguments.act)
   
 # model definition:  
 if arguments.nn=='mlp':
     if arguments.att:
         if arguments.share:
-            pass
+            snet = models.mlp_att_share(arguments, arguments.K, arguments.Kdis, 513)
         else:
             snet = models.mlp_att(arguments, arguments.K, arguments.Kdis, 513)
     else:
