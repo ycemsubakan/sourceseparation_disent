@@ -20,9 +20,8 @@ for fl in files:
         all_val_sdrs.append(rslt['mean_val'])
     #max_ind_tst = np.amax(all_tst_sdrs)
     max_ind_val = int(np.argmax(all_val_sdrs))
-    print('Best config {}, model name {}, completed configs {}, \n best test_sdr {}, best val_sdr {}'.format(results[max_ind_val]['config'], results[0]['model_name'], len(results),
-                                                                                                all_tst_sdrs[max_ind_val], all_val_sdrs[max_ind_val]))
+    print('Model name: {}, best config: {}, num. of completed configs: {}, \n best test_sdr: {}, best val_sdr: {}'.format(results[0]['model_name'], results[max_ind_val]['config'], len(results),
+                                                                                                             all_tst_sdrs[max_ind_val], all_val_sdrs[max_ind_val]))
 
-pdb.set_trace()
 
 
