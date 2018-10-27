@@ -15,6 +15,7 @@ import scipy as sp
 import sklearn as skt
 import itertools as it
 import copy
+from tqdm import tqdm
 
 def compute_meansdr(arguments, bss_evals):
     all_sdrs = []
@@ -52,8 +53,9 @@ def timit_test_data(arguments, model, directories):
     s2s = [] 
     s1hats = []
     s2hats = []
-    for i, dr in enumerate(directories):
-        print(i, dr)
+    print('Computing bss evals...')
+    for i, dr in enumerate(tqdm(directories)):
+        #print(i, dr)
         dt = preprocess_timit_files(arguments, dr=dr) 
 
         xhat1, xhat2 = model.forward(dt)
@@ -191,12 +193,18 @@ def timit_prepare_data(arguments, folder='TRAIN', ntrs=1000, ntsts=20, nval=10):
 
 
 def sample_hyperparam_configs(arguments, Nconfigs=100):
-    lr = np.random.choice([1e-4, 2e-4, 5e-4, 1e-3], Nconfigs).reshape(-1, 1)
-    K = np.random.choice([100, 150, 200, 250, 300], Nconfigs).reshape(-1, 1)
-    Kdis = np.random.choice([100, 150, 200, 250, 300], Nconfigs).reshape(-1, 1)
-    num_layers = np.random.choice([1, 2, 3], Nconfigs).reshape(-1, 1)
+    lr = np.random.choice([1e-4, 5e-4, 1e-3, 1e-2, 1e-1], Nconfigs, replace=True).reshape(-1, 1)
+    K = np.random.choice([100, 150, 200, 250, 300], Nconfigs, replace=True).reshape(-1, 1)
+    Kdis = np.random.choice([100, 150, 200, 250, 300], Nconfigs, replace=True).reshape(-1, 1)
+    if arguments.nn == 'mlp':
+        num_layers = np.random.choice([1, 2, 3], Nconfigs, replace=True).reshape(-1, 1)
+    elif arguments.nn == 'rnn':
+        num_layers = np.random.choice([1, 2], Nconfigs, replace=True).reshape(-1, 1)
+    dropout = np.random.choice([0.0, 0.1, 0.2, 0.3], Nconfigs, replace=True).reshape(-1, 1)
+    gated = np.random.choice([0, 1], Nconfigs, replace=True).reshape(-1, 1)
+    activation = np.random.choice(['relu', 'sigmoid'], Nconfigs, replace=True).reshape(-1, 1)
 
-    configs = np.concatenate([lr, K, Kdis, num_layers], axis=1)
+    configs = np.concatenate([lr, K, Kdis, num_layers, dropout, gated, activation], axis=1)
     return configs  
 
 
@@ -270,7 +278,7 @@ def audio_to_bsseval(s1hats, s2hats, s1s, s2s):
     bss_evals_paris = []
     for i, (s1hat, s2hat, s1, s2) in enumerate(zip(s1hats, s2hats, s1s, s2s)):
 
-        print('Computing bssevals for mixture {}'.format(i))
+        #print('Computing bssevals for mixture {}'.format(i))
 
         sourcehat_mat = np.concatenate([s1hat.reshape(1, -1), s2hat.reshape(1, -1)], 0)
         source_mat = np.concatenate([s1.reshape(1, -1), s2.reshape(1, -1)], 0)

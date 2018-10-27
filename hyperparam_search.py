@@ -13,9 +13,12 @@ from itertools import islice
 import utils as ut
 import pickle
 import time
+import datetime
 import visdom
 import models 
 import os
+
+timestamp = str(datetime.datetime.now()).replace(' ','')
 
 vis = visdom.Visdom(port=5800, server='http://cem@nmf.cs.illinois.edu', env='cem_dev',
                     use_incoming_socket=False)
@@ -87,19 +90,25 @@ results_path = 'paramsearch_results'
 if not os.path.exists(results_path):
     os.mkdir(results_path)
 
-arguments.model = '{}{}_att{}_share{}_gated{}_{}'.format(arguments.nn, arguments.num_layers, arguments.att, arguments.share, arguments.gated, arguments.act)
-  
+#arguments.model = '{}{}_att{}_share{}_gated{}_{}'.format(arguments.nn, arguments.num_layers, arguments.att, arguments.share, arguments.gated, arguments.act)
+
+
+arguments.model = 'arc_{}_att_{}_share_{}_{}'.format(arguments.nn, arguments.att, arguments.share, timestamp)
+
 # sample the configurations 
 hyperparam_configs = ut.sample_hyperparam_configs(arguments, Nconfigs=100)
-pdb.set_trace()
 
 all_results = []
-for config in hyperparam_configs:
+for cnum, config in enumerate(hyperparam_configs):
+    print('Config {}, {}'.format(cnum, config))
     # set the hyperparams
-    arguments.lr = config[0]
-    arguments.K = config[1]
-    arguments.Kdis = config[2]
-    arguments.num_layers = config[3]
+    arguments.lr = float(config[0])
+    arguments.K = int(config[1])
+    arguments.Kdis = int(config[2])
+    arguments.num_layers = int(config[3])
+    arguments.dropout = float(config[4])
+    arguments.gated = int(config[5])
+    arguments.act = str(config[6])
 
     # set the model
     if arguments.nn=='mlp':
@@ -138,10 +147,10 @@ for config in hyperparam_configs:
     snet.eval()
 
     bss_evals_test = ut.timit_test_data(arguments, snet, directories=tst_directories)
-    mean_test = ut.compute_meansdr(arguments, bss_evals)
+    mean_test = ut.compute_meansdr(arguments, bss_evals_test)
 
     bss_evals_val = ut.timit_test_data(arguments, snet, directories=val_directories)
-    mean_val = ut.compute_meansdr(arguments, bss_evals)
+    mean_val = ut.compute_meansdr(arguments, bss_evals_val)
 
     results_dict = {'config': config,
                     'bss_evals_test': bss_evals_test,
