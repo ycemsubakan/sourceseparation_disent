@@ -268,7 +268,6 @@ class mlp_att(base_model):
             for i, d in enumerate(dt):
                 dt[i] = d.cuda()
 
-        #pdb.set_trace()
         eye = torch.eye(self.ntemp).cuda()
         temps1 = self.templates1(eye).unsqueeze(1).unsqueeze(1)
         temps2 = self.templates2(eye).unsqueeze(1).unsqueeze(1)
@@ -323,7 +322,6 @@ class mlp_att_share(base_model):
             for i, d in enumerate(dt):
                 dt[i] = d.cuda()
 
-        #pdb.set_trace()
         eye = torch.eye(2*self.ntemp).cuda()
         temps = self.templates(eye).unsqueeze(1).unsqueeze(1)
 

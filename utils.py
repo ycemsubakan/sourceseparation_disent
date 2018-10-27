@@ -228,7 +228,6 @@ def prepare_mixture_gm_data(arguments):
     arguments.means = means.numpy()
 
     N = arguments.batch_size
-    pdb.set_trace()
 
     mixinds = torch.multinomial(torch.ones(num_means), N, replacement=True) 
     obsnoise = sig*torch.randn(N, arguments.L2) 
