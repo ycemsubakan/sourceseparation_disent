@@ -16,6 +16,14 @@ import sklearn as skt
 import itertools as it
 import copy
 
+def compute_meansdr(arguments, bss_evals):
+    all_sdrs = []
+    for bss_eval in bss_evals:
+        all_sdrs.append(bss_eval[0].mean())
+    mean_sdr = np.mean(all_sdrs)
+    print('mean SDR {} model {}'.format(mean_sdr, arguments.model))
+    return mean_sdr
+
 def append_dirs(directories):
     all_dirs = [ ''.join(dr) for dr in directories]
     all_dirs_str = '_' + ''.join(all_dirs) + '_'
@@ -268,8 +276,8 @@ def audio_to_bsseval(s1hats, s2hats, s1s, s2s):
                                             source_mat[:, :Nmin]), 
                                 tu.bss_eval(sourcehat_mat[1, :Nmin], 1,
                                             source_mat[:, :Nmin])])
-        print(bss_evals)
-        print(bss_evals_paris) 
+        #print(bss_evals)
+        #print(bss_evals_paris) 
 
 
     return bss_evals

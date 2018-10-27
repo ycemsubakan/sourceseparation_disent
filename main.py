@@ -56,6 +56,7 @@ parser.add_argument('--EP_train', type=int, default=2000)
 parser.add_argument('--verbose', type=int, default=1)
 parser.add_argument('--Kdisc', type=int, default=90)
 parser.add_argument('--notes', type=str, default='')
+parser.add_argument('--val_intervals', type=int, default=100)
 
 parser.add_argument('--dropout', type=float, default=0.5)
 
@@ -129,11 +130,7 @@ if not os.path.exists(results_path):
     os.mkdir(results_path)
 
 bss_evals = ut.timit_test_data(arguments, snet, directories=tst_directories)
-
-all_sdrs = []
-for bss_eval in bss_evals:
-    all_sdrs.append(bss_eval[0].mean())
-print('mean SDR {} model {}'.format(np.mean(all_sdrs), arguments.model))
+ut.compute_meansdr(arguments, bss_evals)
 
 torch.save(bss_evals, results_path + '/' + arguments.model + '.bsseval')
 torch.save(arguments, results_path + '/' + arguments.model + '.args')
