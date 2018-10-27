@@ -19,7 +19,6 @@ import models
 import os
 
 timestamp = str(datetime.datetime.now()).replace(' ','')
-pdb.set_trace()
 
 vis = visdom.Visdom(port=5800, server='http://cem@nmf.cs.illinois.edu', env='cem_dev',
                     use_incoming_socket=False)
@@ -122,13 +121,11 @@ for cnum, config in enumerate(hyperparam_configs):
             else:
                 snet = models.mlp(arguments, arguments.K, arguments.Kdis, 513)
     if arguments.nn=='rnn':
-        if arguments.num_layers==3:
-            pass
         if arguments.att:
             if arguments.share:
                 pass
             else:
-                pass
+                snet = models.lstm_att(arguments, arguments.K, arguments.Kdis, 513)
         else:
             if arguments.share:
                 snet = models.lstm_share(arguments, arguments.K, arguments.Kdis, 513)

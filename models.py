@@ -276,6 +276,7 @@ class mlp_att(base_model):
         mix1 = (self.dim_red1(dt[0]))
         mix2 = (self.dim_red2(dt[0]))
 
+        
         ws1 = F.softmax(self.sel1(mix1).permute(2, 0, 1), dim=0)
         ws2 = F.softmax(self.sel2(mix2).permute(2, 0, 1), dim=0)
         
@@ -286,8 +287,8 @@ class mlp_att(base_model):
         cat_s2 = torch.cat([mix2, f2], dim=2)
 
         # get the hhats
-        hhat1 = (self.sep_1(cat_s1))
-        hhat2 = (self.sep_2(cat_s2))
+        hhat1 = (self.sep_out1(cat_s1))
+        hhat2 = (self.sep_out2(cat_s2))
 
         xhat1 = F.softplus(hhat1)
         xhat2 = F.softplus(hhat2)
@@ -343,3 +344,76 @@ class mlp_att_share(base_model):
 
         return xhat1, xhat2
 
+''' LSTM with Attention '''
+class lstm_att(base_model): 
+    def __init__(self, arguments, K, Kdis, Linput):
+        super(lstm_att, self).__init__(arguments, K, Kdis, Linput)
+        
+        assert arguments.num_layers < 3
+
+        dropout=self.arguments.dropout
+        self.ntemp = self.arguments.ntemp
+
+        #self.dim_red1 = nn.Linear(Linput, K)
+        #self.dim_red2 = nn.Linear(Linput, K)
+
+        self.templates1 = nn.Linear(self.ntemp, Kdis, bias=False)
+        self.templates2 = nn.Linear(self.ntemp, Kdis, bias=False)
+        
+        self.sel1 = nn.Linear(2*K, self.ntemp)
+        self.sel2 = nn.Linear(2*K, self.ntemp)
+
+        self.sep_rnn1 = nn.LSTM(input_size = Linput,
+                               hidden_size = K,
+                               num_layers=arguments.num_layers,
+                               dropout=dropout,
+                               batch_first=True,
+                               bidirectional=True)
+
+        self.sep_rnn2 = nn.LSTM(input_size = Linput,
+                               hidden_size = K,
+                               num_layers=arguments.num_layers, 
+                               dropout=dropout,
+                               batch_first=True,
+                               bidirectional=True)
+        
+        if arguments.num_layers==1:
+            self.sep_out1 = self.Dense(Kdis + 2*K, Linput, dropout=dropout, activation=self.activation)
+            self.sep_out2 = self.Dense(Kdis + 2*K, Linput, dropout=dropout, activation=self.activation)
+        elif arguments.num_layers==2:
+            self.sep_out1 = nn.Sequential(self.Dense(Kdis + 2*K, Kdis + 2*K, dropout=dropout, activation=self.activation), 
+                                       self.Dense(Kdis + 2*K, Linput, dropout=dropout, activation=self.activation))
+            self.sep_out2 = nn.Sequential(self.Dense(Kdis + 2*K, Kdis + 2*K, dropout=dropout, activation=self.activation), 
+                                       self.Dense(Kdis + 2*K, Linput, dropout=dropout, activation=self.activation))
+    
+            
+    def forward(self, dt):
+        if self.arguments.cuda:
+            for i, d in enumerate(dt):
+                dt[i] = d.cuda()
+
+        #pdb.set_trace()
+        eye = torch.eye(self.ntemp).cuda()
+        temps1 = self.templates1(eye).unsqueeze(1).unsqueeze(1)
+        temps2 = self.templates2(eye).unsqueeze(1).unsqueeze(1)
+
+        mix1, _ = (self.sep_rnn1(dt[0]))
+        mix2, _ = (self.sep_rnn2(dt[0]))
+        
+        ws1 = F.softmax(self.sel1(mix1).permute(2, 0, 1), dim=0)
+        ws2 = F.softmax(self.sel2(mix2).permute(2, 0, 1), dim=0)
+        
+        f1 = (ws1.unsqueeze(-1)*temps1).sum(0)
+        f2 = (ws2.unsqueeze(-1)*temps2).sum(0)
+
+        cat_s1 = torch.cat([mix1, f1], dim=2)
+        cat_s2 = torch.cat([mix2, f2], dim=2)
+
+        # get the hhats
+        hhat1 = (self.sep_out1(cat_s1))
+        hhat2 = (self.sep_out2(cat_s2))
+
+        xhat1 = F.softplus(hhat1)
+        xhat2 = F.softplus(hhat2)
+
+        return xhat1, xhat2
