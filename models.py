@@ -21,7 +21,10 @@ class base_model(nn.Module):
         elif not arguments.gated:
             self.Dense = Dense
 
-        self.activation=arguments.act
+        if arguments.act == 'relu':
+            self.activation = nn.ReLU
+        elif arguments.act == 'sigmoid':
+            self.activation = nn.Sigmoid
 
     def trainer(self, loader, opt, vis):
         
@@ -46,6 +49,7 @@ class base_model(nn.Module):
                 print('Error {}, batch [{}/{}], epoch [{}/{}]'.format(err.item(),
                                                         i+1, len(loader), ep+1, EP))
             if (ep > 200) and ((ep % self.arguments.val_intervals) == 0):
+                print('Validation computations...')
                 self.eval()
                 val_bss_evals = ut.timit_test_data(self.arguments, self, directories=self.arguments.val_directories)
                 self.train()
