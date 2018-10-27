@@ -56,7 +56,13 @@ class base_model(nn.Module):
                 all_vals.append(ut.compute_meansdr(self.arguments, val_bss_evals))
                 print(all_vals)
 
+                # stop the run if the first val is bad
+                if all_vals[-1] < 5.0:
+                    print('breaking the run..')
+                    break
+
                 if (len(all_vals) > 1) and (all_vals[-1] < all_vals[-2]): 
+                    print('breaking the run..')
                     break
 
 
