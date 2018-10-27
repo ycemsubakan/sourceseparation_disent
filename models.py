@@ -285,17 +285,17 @@ class mlp_att_share(base_model):
 
         self.templates = nn.Linear(2*self.ntemp, Kdis, bias=False)
         
-        self.sel = nn.Linear(K, 2*self.ntemp)
+        self.sel = nn.Linear(2*K, 2*self.ntemp)
 
         if arguments.num_layers==1:
-            self.sep = self.Dense( 2*(Kdis + K), 2*Linput, dropout=dropout, activation=self.activation)
+            self.sep = self.Dense( Kdis + 2*K, 2*Linput, dropout=dropout, activation=self.activation)
         elif arguments.num_layers==2:
-            self.sep = nn.Sequential(self.Dense(2*(Kdis + K), 2*(Kdis + K), dropout=dropout, activation=self.activation), 
-                                     self.Dense(2*(Kdis + K), 2*Linput, dropout=dropout, activation=self.activation))
+            self.sep = nn.Sequential(self.Dense(Kdis + 2*K, Kdis + 2*K, dropout=dropout, activation=self.activation), 
+                                     self.Dense(Kdis + 2*K, 2*Linput, dropout=dropout, activation=self.activation))
         elif arguments.num_layers==3:
-            self.sep = nn.Sequential(self.Dense(2*(Kdis + K), 2*(Kdis + K), dropout=dropout, activation=self.activation), 
-                                       self.Dense(2*(Kdis + K), 2*(Kdis + K), dropout=dropout, activation=self.activation),
-                                       self.Dense(2*(Kdis + K), 2*Linput, dropout=dropout, activation=self.activation))
+            self.sep = nn.Sequential(self.Dense(Kdis + 2*K, Kdis + 2*K, dropout=dropout, activation=self.activation), 
+                                       self.Dense(Kdis + 2*K, Kdis + 2*K, dropout=dropout, activation=self.activation),
+                                       self.Dense(Kdis + 2*K, 2*Linput, dropout=dropout, activation=self.activation))
     def forward(self, dt):
         if self.arguments.cuda:
             for i, d in enumerate(dt):
@@ -314,7 +314,7 @@ class mlp_att_share(base_model):
         cat_s = torch.cat([mix, f], dim=2)
 
         # get the hhats
-        hhat = (self.sep(cat_s))
+        h = (self.sep(cat_s))
 
         xhat1 = F.softplus(h[:,:,:self.Linput])
         xhat2 = F.softplus(h[:,:,self.Linput:])
