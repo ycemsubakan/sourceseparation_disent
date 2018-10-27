@@ -72,8 +72,6 @@ torch.manual_seed(arguments.seed)
 if arguments.cuda:
     torch.cuda.manual_seed(arguments.seed)
 np.random.seed(arguments.seed)
-timestamp = round(time.time())
-arguments.timestamp = timestamp
 
 loader, tr_directories, tst_directories, val_directories = ut.timit_prepare_data(arguments, 
                                                                                  folder='TRAIN', 

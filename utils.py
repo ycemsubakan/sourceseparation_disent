@@ -31,9 +31,11 @@ def append_dirs(directories):
     return all_dirs_str 
 
 def list_timit_dirs(folder='TRAIN'):
-    home = '/' #os.path.expanduser('~')
-    #p = os.path.join(home, 'data/lisa/data/timit/raw/TIMIT', folder)
-    p = os.path.join(home, '/home/optimass/scratch/TIMIT', folder)
+    home = '/' 
+    if os.path.expanduser('~') == '/home/optimass':
+        p = os.path.join(home, 'home/optimass/scratch/TIMIT', folder)
+    elif os.path.expanduser('~') == '/u/subakany':
+        p = os.path.join(home, 'data/lisa/data/timit/raw/TIMIT', folder)
 
     directories = os.listdir(p)
     possible_dirs = []
@@ -193,7 +195,12 @@ def timit_prepare_data(arguments, folder='TRAIN', ntrs=1000, ntsts=20, nval=10):
 
 
 def sample_hyperparam_configs(arguments, Nconfigs=100):
-    lr = np.random.choice([1e-4, 5e-4, 1e-3, 1e-2, 1e-1], Nconfigs, replace=True).reshape(-1, 1)
+    if arguments.nn == 'mlp':
+        lr = np.random.choice([1e-4, 5e-4, 1e-3], Nconfigs, replace=True).reshape(-1, 1)
+    elif arguments.nn == 'rnn':
+        lr = np.random.choice([1e-4, 5e-4, 1e-3, 1e-2, 1e-1], Nconfigs, replace=True).reshape(-1, 1)
+
+    lr = np.random.choice([1e-4, 5e-4, 1e-3], Nconfigs, replace=True).reshape(-1, 1)
     K = np.random.choice([100, 150, 200, 250, 300], Nconfigs, replace=True).reshape(-1, 1)
     Kdis = np.random.choice([100, 150, 200, 250, 300], Nconfigs, replace=True).reshape(-1, 1)
     if arguments.nn == 'mlp':
