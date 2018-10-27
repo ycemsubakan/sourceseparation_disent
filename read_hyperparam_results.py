@@ -9,7 +9,6 @@ files = os.listdir(path)
 
 for fl in files:
     results = torch.load(path + fl)
-    print('Model name : {}'.format(results[0]['model_name']))
     results_lst = []
     all_tst_sdrs = []
     all_val_sdrs = []
@@ -21,7 +20,8 @@ for fl in files:
         all_val_sdrs.append(rslt['mean_val'])
     #max_ind_tst = np.amax(all_tst_sdrs)
     max_ind_val = int(np.argmax(all_val_sdrs))
-    print('Best config {} test_sdr {}, val_sdr {}'.format(results[max_ind_val]['config'], all_tst_sdrs[max_ind_val], all_val_sdrs[max_ind_val]))
+    print('Best config {}, model name {}, completed configs {}, \n best test_sdr {}, best val_sdr {}'.format(results[max_ind_val]['config'], results[0]['model_name'], len(results),
+                                                                                                all_tst_sdrs[max_ind_val], all_val_sdrs[max_ind_val]))
 
 pdb.set_trace()
 
