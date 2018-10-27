@@ -6,6 +6,7 @@ import torch.nn.functional as F
 import pdb
 import numpy as np
 from nn import GatedDense
+import utils as ut
 
 class base_model(nn.Module):
     def __init__(self, arguments, K, Kdis, Linput):
@@ -19,6 +20,7 @@ class base_model(nn.Module):
         
         EP = self.arguments.EP_train
         errs = []
+        all_vals = []
         for ep in range(EP):
             for i, dt in enumerate(loader):
                 self.zero_grad()
@@ -33,8 +35,20 @@ class base_model(nn.Module):
                 
                 opt.step()
 
+            if self.arguments.verbose and ((ep % self.pper) == 0):
                 print('Error {}, batch [{}/{}], epoch [{}/{}]'.format(err.item(),
                                                         i+1, len(loader), ep+1, EP))
+            if (ep > 200) and ((ep % self.arguments.val_intervals) == 0):
+                self.eval()
+                val_bss_evals = ut.timit_test_data(self.arguments, self, directories=self.arguments.val_directories)
+                self.train()
+                all_vals.append(ut.compute_meansdr(self.arguments, val_bss_evals))
+                print(all_vals)
+
+                if (len(all_vals) > 1) and (all_vals[-1] < all_vals[-2]): 
+                    break
+
+
             errs.append(err.item())
             if self.arguments.plot_training and ((ep % self.pper) == 0):
                 vis.line(errs, win='err')
