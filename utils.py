@@ -201,7 +201,12 @@ def sample_hyperparam_configs(arguments, Nconfigs=100):
         lr = np.random.choice([1e-4, 5e-4, 1e-3, 1e-2, 1e-1], Nconfigs, replace=True).reshape(-1, 1)
 
     lr = np.random.choice([1e-4, 5e-4, 1e-3], Nconfigs, replace=True).reshape(-1, 1)
-    K = np.random.choice([100, 150, 200, 250, 300], Nconfigs, replace=True).reshape(-1, 1)
+
+    if arguments.att == 1:
+        K = np.random.choice([100, 150, 200, 250, 300], Nconfigs, replace=True).reshape(-1, 1)
+    elif arguments.att == 0:
+        K = np.random.choice([100, 150, 200, 250, 300, 350, 400, 450, 500], Nconfigs, replace=True).reshape(-1, 1)
+
     Kdis = np.random.choice([100, 150, 200, 250, 300], Nconfigs, replace=True).reshape(-1, 1)
     if arguments.nn == 'mlp':
         num_layers = np.random.choice([2, 3], Nconfigs, replace=True).reshape(-1, 1)
