@@ -190,7 +190,15 @@ def timit_prepare_data(arguments, folder='TRAIN', ntrs=1000, ntsts=20, nval=10):
     return loader, tr_directories, tst_directories, val_directories#, [source1side_all_cat, source2side_all_cat]
 
 
-        
+def sample_hyperparam_configs(arguments, Nconfigs=100):
+    lr = np.random.choice([1e-4, 2e-4, 5e-4, 1e-3], Nconfigs).reshape(-1, 1)
+    K = np.random.choice([100, 150, 200, 250, 300], Nconfigs).reshape(-1, 1)
+    Kdis = np.random.choice([100, 150, 200, 250, 300], Nconfigs).reshape(-1, 1)
+    num_layers = np.random.choice([1, 2, 3], Nconfigs).reshape(-1, 1)
+
+    configs = np.concatenate([lr, K, Kdis, num_layers], axis=1)
+    return configs  
+
 
 def prepare_mixture_gm_data(arguments):
     dataset = []
