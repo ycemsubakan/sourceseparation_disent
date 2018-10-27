@@ -307,17 +307,19 @@ class mlp_att_share(base_model):
 
         self.templates = nn.Linear(2*self.ntemp, Kdis, bias=False)
         
-        self.sel = nn.Linear(2*K, 2*self.ntemp)
+        self.sel1 = nn.Linear(2*K, 2*self.ntemp)
+        self.sel2 = nn.Linear(2*K, 2*self.ntemp)
 
+        hidden_size = 2*(Kdis+K)
         if arguments.num_layers==1:
-            self.sep = self.Dense( Kdis + 2*K, 2*Linput, dropout=dropout, activation=self.activation)
+            self.sep = self.Dense( hidden_size, 2*Linput, dropout=dropout, activation=self.activation)
         elif arguments.num_layers==2:
-            self.sep = nn.Sequential(self.Dense(Kdis + 2*K, Kdis + 2*K, dropout=dropout, activation=self.activation), 
-                                     self.Dense(Kdis + 2*K, 2*Linput, dropout=dropout, activation=self.activation))
+            self.sep = nn.Sequential(self.Dense(hidden_size, hidden_size, dropout=dropout, activation=self.activation), 
+                                     self.Dense(hidden_size, 2*Linput, dropout=dropout, activation=self.activation))
         elif arguments.num_layers==3:
-            self.sep = nn.Sequential(self.Dense(Kdis + 2*K, Kdis + 2*K, dropout=dropout, activation=self.activation), 
-                                       self.Dense(Kdis + 2*K, Kdis + 2*K, dropout=dropout, activation=self.activation),
-                                       self.Dense(Kdis + 2*K, 2*Linput, dropout=dropout, activation=self.activation))
+            self.sep = nn.Sequential(self.Dense(hidden_size, hidden_size, dropout=dropout, activation=self.activation), 
+                                       self.Dense(hidden_size, hidden_size, dropout=dropout, activation=self.activation),
+                                       self.Dense(hidden_size, 2*Linput, dropout=dropout, activation=self.activation))
     def forward(self, dt):
         if self.arguments.cuda:
             for i, d in enumerate(dt):
@@ -328,11 +330,13 @@ class mlp_att_share(base_model):
 
         mix = (self.dim_red(dt[0]))
 
-        ws = F.softmax(self.sel(mix).permute(2, 0, 1), dim=0)
+        ws1 = F.softmax(self.sel1(mix).permute(2, 0, 1), dim=0)
+        ws2 = F.softmax(self.sel2(mix).permute(2, 0, 1), dim=0)
         
-        f = (ws.unsqueeze(-1)*temps).sum(0)
+        f1 = (ws1.unsqueeze(-1)*temps).sum(0)
+        f2 = (ws2.unsqueeze(-1)*temps).sum(0)
 
-        cat_s = torch.cat([mix, f], dim=2)
+        cat_s = torch.cat([mix, f1, f2], dim=2)
 
         # get the hhats
         h = (self.sep(cat_s))
@@ -375,6 +379,71 @@ class lstm_att(base_model):
                                batch_first=True,
                                bidirectional=True)
         
+        if arguments.num_layers==1:
+            self.sep_out1 = self.Dense(Kdis + 2*K, Linput, dropout=dropout, activation=self.activation)
+            self.sep_out2 = self.Dense(Kdis + 2*K, Linput, dropout=dropout, activation=self.activation)
+        elif arguments.num_layers==2:
+            self.sep_out1 = nn.Sequential(self.Dense(Kdis + 2*K, Kdis + 2*K, dropout=dropout, activation=self.activation), 
+                                       self.Dense(Kdis + 2*K, Linput, dropout=dropout, activation=self.activation))
+            self.sep_out2 = nn.Sequential(self.Dense(Kdis + 2*K, Kdis + 2*K, dropout=dropout, activation=self.activation), 
+                                       self.Dense(Kdis + 2*K, Linput, dropout=dropout, activation=self.activation))
+    
+            
+    def forward(self, dt):
+        if self.arguments.cuda:
+            for i, d in enumerate(dt):
+                dt[i] = d.cuda()
+
+        #pdb.set_trace()
+        eye = torch.eye(self.ntemp).cuda()
+        temps1 = self.templates1(eye).unsqueeze(1).unsqueeze(1)
+        temps2 = self.templates2(eye).unsqueeze(1).unsqueeze(1)
+
+        mix1, _ = (self.sep_rnn1(dt[0]))
+        mix2, _ = (self.sep_rnn2(dt[0]))
+        
+        ws1 = F.softmax(self.sel1(mix1).permute(2, 0, 1), dim=0)
+        ws2 = F.softmax(self.sel2(mix2).permute(2, 0, 1), dim=0)
+        
+        f1 = (ws1.unsqueeze(-1)*temps1).sum(0)
+        f2 = (ws2.unsqueeze(-1)*temps2).sum(0)
+
+        cat_s1 = torch.cat([mix1, f1], dim=2)
+        cat_s2 = torch.cat([mix2, f2], dim=2)
+
+        # get the hhats
+        hhat1 = (self.sep_out1(cat_s1))
+        hhat2 = (self.sep_out2(cat_s2))
+
+        xhat1 = F.softplus(hhat1)
+        xhat2 = F.softplus(hhat2)
+
+        return xhat1, xhat2
+
+
+
+''' LSTM with Attention and Shared Architecture'''
+class lstm_att_share(base_model): 
+    def __init__(self, arguments, K, Kdis, Linput):
+        super(lstm_att_share, self).__init__(arguments, K, Kdis, Linput)
+        
+        assert arguments.num_layers < 3
+
+        dropout=self.arguments.dropout
+        self.ntemp = self.arguments.ntemp
+
+        self.templates = nn.Linear(2*self.ntemp, Kdis, bias=False)
+        
+        self.sel = nn.Linear(2*K, 2*self.ntemp)
+
+        self.sep_rnn1 = nn.LSTM(input_size = Linput,
+                               hidden_size = 2*K,
+                               num_layers=arguments.num_layers,
+                               dropout=dropout,
+                               batch_first=True,
+                               bidirectional=True)
+
+        pdb.set_trace()
         if arguments.num_layers==1:
             self.sep_out1 = self.Dense(Kdis + 2*K, Linput, dropout=dropout, activation=self.activation)
             self.sep_out2 = self.Dense(Kdis + 2*K, Linput, dropout=dropout, activation=self.activation)
