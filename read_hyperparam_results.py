@@ -15,7 +15,7 @@ for fl in files:
     for rslt in results:
         arg = (rslt['mean_test'], rslt['mean_val'], list(rslt['config']))
         results_lst.append(arg)
-        print(arg)
+        #print(arg)
         all_tst_sdrs.append(rslt['mean_test'])
         all_val_sdrs.append(rslt['mean_val'])
     #max_ind_tst = np.amax(all_tst_sdrs)
