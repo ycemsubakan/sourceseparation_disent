@@ -298,8 +298,8 @@ class mlp_att(base_model):
         cat_s2 = torch.cat([mix2, f2], dim=2)
 
         # get the hhats
-        hhat1 = (self.sep_out1(cat_s1))
-        hhat2 = (self.sep_out2(cat_s2))
+        hhat1 = (self.sep_1(cat_s1))
+        hhat2 = (self.sep_2(cat_s2))
 
         xhat1 = F.softplus(hhat1)
         xhat2 = F.softplus(hhat2)
