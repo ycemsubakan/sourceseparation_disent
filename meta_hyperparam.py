@@ -9,6 +9,11 @@ NN    = ['mlp', 'rnn']
 ATT   = [0, 1]
 SHARE = [0, 1]
 
+NN    = ['mlp']
+ATT   = [1]
+SHARE = [0]
+
+
 for nn in NN:
     for att in ATT:
         for share in SHARE:

@@ -48,6 +48,7 @@ parser.add_argument('--K', type=int, default=150)
 parser.add_argument('--Kdis', type=int, default=250)
 parser.add_argument('--ntemp', type=int, default=100)
 
+parser.add_argument('--linear', type=int, default=0)
 
 # others 
 parser.add_argument('--batch_size', type=int, default=10)
