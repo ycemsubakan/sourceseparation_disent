@@ -32,7 +32,7 @@ for fl in files:
             to_append[k] = rslt['arguments'].__dict__[k]
         to_append['mean_test'] = rslt['mean_test']
         to_append['mean_val']  = rslt['mean_val']
-        
+        pdb.set_trace() 
         to_append = pd.DataFrame(to_append, index=[len(df)])
         df = df.append(to_append)
         
