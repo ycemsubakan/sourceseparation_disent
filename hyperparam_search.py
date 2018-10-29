@@ -69,11 +69,6 @@ arguments = parser.parse_args()
 
 arguments.cuda = torch.cuda.is_available()
 
-torch.manual_seed(arguments.seed)
-if arguments.cuda:
-    torch.cuda.manual_seed(arguments.seed)
-np.random.seed(arguments.seed)
-
 if arguments.plot_training:
     vis = visdom.Visdom(port=5800, server='http://cem@nmf.cs.illinois.edu', env='cem_dev',
                         use_incoming_socket=False)
