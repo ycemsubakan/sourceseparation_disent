@@ -104,7 +104,8 @@ def filter_directories(tr_dirs, tofilter_dirs, all_dirs):
 
 
 def timit_prepare_data(arguments, folder='TRAIN', ntrs=1000, ntsts=20, nval=10):
-    train_path = '/data/lisa/data/sourcecep/tr_data_withside.t'
+    #/data/lisa/data/sourcecep/
+    train_path = 'tr_data_withside.t'
     if 1 & os.path.exists(train_path):
         temp  = torch.load(train_path)
         tr_data, tr_directories, tst_directories, val_directories = temp
@@ -121,7 +122,7 @@ def timit_prepare_data(arguments, folder='TRAIN', ntrs=1000, ntsts=20, nval=10):
         #val_directories = directories[(ntrs+ntsts):]
 
         # use the old directories (a dirty fix)
-        temp  = torch.load('/data/lisa/data/sourcesep/tr_data.t') #'tr_data.t')
+        temp  = torch.load('tr_data.t') #'tr_data.t')
         tr_data, tr_directories, tst_directories, val_directories = temp
         
         #all_directories = append_dirs(directories) 
