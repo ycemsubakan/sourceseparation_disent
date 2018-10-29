@@ -16,7 +16,6 @@ class base_model(nn.Module):
         self.arguments = arguments
         self.pper = arguments.plot_interval
 
-
         if arguments.gated:
             self.Dense = GatedDense
         elif not arguments.gated:
@@ -486,3 +485,158 @@ class lstm_att_share(base_model):
         xhat2 = F.softplus(h[:,:,self.Linput:])
         
         return xhat1, xhat2
+
+
+''' MLP with Attention and Shared Architecture + SIDE'''
+class mlp_att_share_side(base_model): 
+    def __init__(self, arguments, K, Kdis, Linput):
+        super(mlp_att_share_side, self).__init__(arguments, K, Kdis, Linput)
+       
+        self.Linput = Linput
+        self.side_max = self.arguments.side_max
+        dropout=self.arguments.dropout
+        self.ntemp = self.arguments.ntemp
+        self.ds = self.arguments.ds
+        self.side_model = self.arguments.side_model
+       
+        ntemp = len(range(0,self.side_max,self.ds)) 
+
+        self.dim_red = nn.Linear(Linput, 2*K)
+
+        if self.side_model=='rnn':
+            self.net1 = nn.LSTM(input_size = Linput,
+                               hidden_size = K,
+                               num_layers=arguments.num_layers,
+                               dropout=dropout,
+                               batch_first=True,
+                               bidirectional=True)
+            self.net2 = nn.LSTM(input_size = Linput,
+                               hidden_size = K,
+                               num_layers=arguments.num_layers,
+                               dropout=dropout,
+                               batch_first=True,
+                               bidirectional=True)
+
+        hidden_size = 2*(K+2*K)
+        if arguments.num_layers==1:
+            self.sep = self.Dense( hidden_size, 2*Linput, dropout=dropout, activation=self.activation)
+        elif arguments.num_layers==2:
+            self.sep = nn.Sequential(self.Dense(hidden_size, hidden_size, dropout=dropout, activation=self.activation), 
+                                     self.Dense(hidden_size, 2*Linput,    dropout=dropout, activation=self.activation))
+        elif arguments.num_layers==3:
+            self.sep = nn.Sequential(self.Dense(hidden_size, hidden_size, dropout=dropout, activation=self.activation), 
+                                     self.Dense(hidden_size, hidden_size, dropout=dropout, activation=self.activation),
+                                     self.Dense(hidden_size, 2*Linput,    dropout=dropout, activation=self.activation))
+    def forward(self, dt):
+        if self.arguments.cuda:
+            for i, d in enumerate(dt):
+                dt[i] = d.cuda()
+        
+        mix = (self.dim_red(dt[0]))
+
+        side1 = dt[6][:,:self.side_max,:]
+        side2 = dt[7][:,:self.side_max,:]
+
+        if self.side_model=='rnn':
+            side1_red, _ = self.net1(side1)
+            side2_red, _ = self.net2(side2)
+            
+            temps1 = side1_red[:,range(0,self.side_max,self.ds),:]
+            temps2 = side2_red[:,range(0,self.side_max,self.ds),:]
+
+            ws1 = F.softmax((temps1.unsqueeze(1) * mix.unsqueeze(2)).sum(-1), dim=2)
+            ws2 = F.softmax((temps2.unsqueeze(1) * mix.unsqueeze(2)).sum(-1), dim=2)
+
+            f1 = ( ws1.unsqueeze(-1) * temps1.unsqueeze(1) ).sum(2)
+            f2 = ( ws2.unsqueeze(-1) * temps2.unsqueeze(1) ).sum(2)
+        
+        cat_s = torch.cat([mix, f1, f2], dim=2)
+
+        # get the hhats
+        h = (self.sep(cat_s))
+
+        xhat1 = F.softplus(h[:,:,:self.Linput])
+        xhat2 = F.softplus(h[:,:,self.Linput:])
+
+        return xhat1, xhat2
+
+
+''' LSTM with Attention and Shared Architecture + SIDE'''
+class lstm_att_share_side(base_model): 
+    def __init__(self, arguments, K, Kdis, Linput):
+        super(lstm_att_share_side, self).__init__(arguments, K, Kdis, Linput)
+        
+
+        self.Linput = Linput
+        self.side_max = self.arguments.side_max
+        dropout=self.arguments.dropout
+        self.ntemp = self.arguments.ntemp
+        self.ds = self.arguments.ds
+        self.side_model = self.arguments.side_model
+       
+        ntemp = len(range(0,self.side_max,self.ds)) 
+
+        self.sep_rnn = nn.LSTM(input_size = Linput,
+                               hidden_size = 2*K,
+                               num_layers=arguments.num_layers,
+                               dropout=dropout,
+                               batch_first=True,
+                               bidirectional=True)
+
+        if self.side_model=='rnn':
+            self.net1 = nn.LSTM(input_size = Linput,
+                               hidden_size = 2*K,
+                               num_layers=arguments.num_layers,
+                               dropout=dropout,
+                               batch_first=True,
+                               bidirectional=True)
+            self.net2 = nn.LSTM(input_size = Linput,
+                               hidden_size = 2*K,
+                               num_layers=arguments.num_layers,
+                               dropout=dropout,
+                               batch_first=True,
+                               bidirectional=True)
+
+        hidden_size = 2*(K+2*K)
+        if arguments.num_layers==1:
+            self.sep_out = self.Dense(hidden_size, 2*Linput, dropout=dropout, activation=self.activation)
+        elif arguments.num_layers==2:
+            self.sep_out = nn.Sequential(self.Dense(hidden_size, hidden_size, dropout=dropout, activation=self.activation), 
+                                         self.Dense(hidden_size, 2*Linput, dropout=dropout, activation=self.activation))
+    
+            
+    def forward(self, dt):
+        if self.arguments.cuda:
+            for i, d in enumerate(dt):
+                dt[i] = d.cuda()
+
+        pdb.set_trace()
+
+        mix, _ = (self.sep_rnn(dt[0]))
+        
+        side1 = dt[6][:,:self.side_max,:]
+        side2 = dt[7][:,:self.side_max,:]
+
+        if self.side_model=='rnn':
+            side1_red, _ = self.net1(side1)
+            side2_red, _ = self.net2(side2)
+            
+            temps1 = side1_red[:,range(0,self.side_max,self.ds),:]
+            temps2 = side2_red[:,range(0,self.side_max,self.ds),:]
+
+            ws1 = F.softmax((temps1.unsqueeze(1) * mix.unsqueeze(2)).sum(-1), dim=2)
+            ws2 = F.softmax((temps2.unsqueeze(1) * mix.unsqueeze(2)).sum(-1), dim=2)
+
+            f1 = ( ws1.unsqueeze(-1) * temps1.unsqueeze(1) ).sum(2)
+            f2 = ( ws2.unsqueeze(-1) * temps2.unsqueeze(1) ).sum(2)
+        
+        cat_s = torch.cat([mix, f1, f2], dim=2)
+        
+        # get the hhats
+        h = (self.sep_out(cat_s))
+
+        xhat1 = F.softplus(h[:,:,:self.Linput])
+        xhat2 = F.softplus(h[:,:,self.Linput:])
+        
+        return xhat1, xhat2
+
