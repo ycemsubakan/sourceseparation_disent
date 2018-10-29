@@ -175,9 +175,9 @@ def timit_prepare_data(arguments, folder='TRAIN', ntrs=1000, ntsts=20, nval=10):
             print('side_data {}'.format(i))
             data = preprocess_timit_files(arguments, dr=dr) 
             #data = iter(loader_mix).next()
-            source1side_all.append(data[4])
-            source2side_all.append(data[5])
-            all_lens.append(data[0].size(1))
+            source1side_all.append(data[6])
+            source2side_all.append(data[7])
+            all_lens.append(min([data[6].shape[-1], data[7].shape[-1]]))
         
         min_len = min(all_lens)
         for i, dr in enumerate(tr_directories):
@@ -195,6 +195,7 @@ def timit_prepare_data(arguments, folder='TRAIN', ntrs=1000, ntsts=20, nval=10):
 
     dataset = torch.utils.data.TensorDataset(tr_data[0], tr_data[1],
                                              tr_data[2], tr_data[3],
+                                             tr_data[2], tr_data[2],
                                              tr_data[4], tr_data[5])
                             
                             
@@ -529,7 +530,7 @@ def preprocess_timit_files(arguments, dr=None):
     #    lr.output.write_wav('timit_test1_pt.wav', Z[2], fs)
     #    lr.output.write_wav('timit_test2_pt.wav', Z[3], fs)
 
-    #loader1 = form_torch_audio_dataset(M1, P1, lens1, arguments, 'source') 
+    #eloader1 = form_torch_audio_dataset(M1, P1, lens1, arguments, 'source') 
     #loader2 = form_torch_audio_dataset(M2, P2, lens2, arguments, 'source')
     #loadermix = form_torch_mixture_dataset(M_t, P_t, 
     #                                       M_t1, M_t2,  
