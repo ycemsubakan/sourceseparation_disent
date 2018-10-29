@@ -226,8 +226,10 @@ def sample_hyperparam_configs(arguments, Nconfigs=100):
     dropout = np.random.choice([0.0, 0.1, 0.2], Nconfigs, replace=True).reshape(-1, 1)
     gated = np.random.choice([0, 1], Nconfigs, replace=True).reshape(-1, 1)
     activation = np.random.choice(['relu', 'sigmoid'], Nconfigs, replace=True).reshape(-1, 1)
+    ntemp = np.random.choice([250, 500], Nconfigs, replace=True).reshape(-1, 1)
+    ds = np.random.choice([1,2,5], Nconfigs, replace=True).reshape(-1, 1)
 
-    configs = np.concatenate([lr, K, Kdis, num_layers, dropout, gated, activation], axis=1)
+    configs = np.concatenate([lr, K, Kdis, num_layers, dropout, gated, activation, ntemp, ds], axis=1)
     return configs  
 
 
