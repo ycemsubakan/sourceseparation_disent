@@ -1,10 +1,17 @@
+
+# coding: utf-8
+
+# In[ ]:
+
 import numpy as np
 import torch
 import pdb
 import os 
 import pandas as pd
+import seaborn as sns
+sns.set(style="whitegrid")
 
-'''
+''' 
 TODO:
     1) all results in one pandas dataframe
     2) box plot given some feature
@@ -32,7 +39,7 @@ for fl in files:
             to_append[k] = rslt['arguments'].__dict__[k]
         to_append['mean_test'] = rslt['mean_test']
         to_append['mean_val']  = rslt['mean_val']
-        pdb.set_trace() 
+        
         to_append = pd.DataFrame(to_append, index=[len(df)])
         df = df.append(to_append)
         
@@ -42,15 +49,72 @@ for fl in files:
 
     #max_ind_tst = np.amax(all_tst_sdrs)
     max_ind_val = int(np.argmax(all_val_sdrs))
-    print('Model name: {}, best config: {}, num. of completed configs: {}, \n'
-            'best test_sdr: {}, best val_sdr: {} \n'.format(results[0]['model_name'], 
-                                                         results[max_ind_val]['config'], 
-                                                         len(results),
-                                                         all_tst_sdrs[max_ind_val], 
-                                                         all_val_sdrs[max_ind_val]))
 
-df['model_name'] = df['model'].map(lambda x: x.split('_2018')[0])
+def clean_name(x):
+    try:
+        x = x.split('_2018')[0]
+    except:
+        None
+    try:
+        x = x.split('-2018')[0]
+    except:
+        None   
+    return x
+            
+df['model_name'] = df['model'].map(clean_name)
 df_good_runs = df[df.mean_test>1]
-df_good_runs.boxplot(colum=['mean_test'], by=['model_name'])
+
+
+df_no_side = df_good_runs[df_good_runs.side.map(lambda x: np.isnan(x))]
+len(df_no_side)
+
+
+
+df_no_side.boxplot(column=['mean_val'], by=['att'])
 
 pdb.set_trace()
+tips = sns.load_dataset("tips")
+# tips['total_bill']
+ax = sns.violinplot(x=tips['total_bill'])
+
+
+# In[ ]:
+
+ax = sns.violinplot(x=df_no_side['mean_val'].reset_index()['mean_val'])
+
+
+# In[ ]:
+
+
+
+
+# In[1]:
+
+df_no_side['mean_val'].reset_index()['mean_val']
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+len(df)
+df_good_runs.sort_values('mean_val', ascending=False)[['model_name','mean_test','ntemp']]
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
+
+# In[ ]:
+
+
+
