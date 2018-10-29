@@ -121,7 +121,7 @@ def timit_prepare_data(arguments, folder='TRAIN', ntrs=1000, ntsts=20, nval=10):
         #val_directories = directories[(ntrs+ntsts):]
 
         # use the old directories (a dirty fix)
-        temp  = torch.load('tr_data.t')
+        temp  = torch.load('/data/lisa/data/sourcesep/tr_data.t') #'tr_data.t')
         tr_data, tr_directories, tst_directories, val_directories = temp
         
         #all_directories = append_dirs(directories) 
