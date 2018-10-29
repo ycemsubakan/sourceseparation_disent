@@ -20,9 +20,6 @@ import os
 
 timestamp = str(datetime.datetime.now()).replace(' ','')
 
-vis = visdom.Visdom(port=5800, server='http://cem@nmf.cs.illinois.edu', env='cem_dev',
-                    use_incoming_socket=False)
-assert vis.check_connection()
 
 parser = argparse.ArgumentParser(description='Source separation experiments')
 parser.add_argument('--seed', type=int, default=1, metavar='S', help='random seed (default: 1)')
@@ -36,8 +33,9 @@ parser.add_argument('--nval', type=int, default=10)
 
 # model describers 
 parser.add_argument('--nn', type=str, default='mlp', help='mlp, rnn')
-parser.add_argument('--att', type=int, default=0, help='0 1')
-parser.add_argument('--share', type=int, default=0, help='0 1')
+parser.add_argument('--att', type=int, default=1, help='0 1')
+parser.add_argument('--share', type=int, default=1, help='0 1')
+parser.add_argument('--side', type=int, default=1, help='enable use of side data')
 parser.add_argument('--gated', type=int, default=0, help='0 1')
 parser.add_argument('--num_layers', type=int, default=2, help='1 2 3')
 parser.add_argument('--act', type=str, default='relu', help='relu, sigmoid')
@@ -47,6 +45,8 @@ parser.add_argument('--lr', type=float, default=0.001, metavar='LR', help='learn
 parser.add_argument('--K', type=int, default=150)
 parser.add_argument('--Kdis', type=int, default=250)
 parser.add_argument('--ntemp', type=int, default=100)
+parser.add_argument('--ds', type=int, default=1, help='downsampling the side data')
+parser.add_argument('--side_model', type=str, default='mlp', help="mlp rnn")
 
 parser.add_argument('--linear', type=int, default=0)
 
@@ -54,7 +54,7 @@ parser.add_argument('--linear', type=int, default=0)
 parser.add_argument('--batch_size', type=int, default=10)
 parser.add_argument('--clip_norm', type=float, default=0.25)
 parser.add_argument('--plot_interval', type=int, default=100)
-parser.add_argument('--plot_training', type=int, default=1)
+parser.add_argument('--plot_training', type=int, default=0)
 parser.add_argument('--save_files', type=int, default=1)
 parser.add_argument('--EP_train', type=int, default=2000)
 parser.add_argument('--verbose', type=int, default=1)
@@ -63,15 +63,19 @@ parser.add_argument('--notes', type=str, default='')
 parser.add_argument('--val_intervals', type=int, default=100)
 
 parser.add_argument('--dropout', type=float, default=0.5)
+parser.add_argument('--side_max', type=int, default=500, help='max size of side data')
 
 arguments = parser.parse_args()
 
 arguments.cuda = torch.cuda.is_available()
 
-torch.manual_seed(arguments.seed)
-if arguments.cuda:
-    torch.cuda.manual_seed(arguments.seed)
-np.random.seed(arguments.seed)
+if arguments.plot_training:
+    vis = visdom.Visdom(port=5800, server='http://cem@nmf.cs.illinois.edu', env='cem_dev',
+                        use_incoming_socket=False)
+    assert vis.check_connection()
+else:
+    vis = None
+
 
 loader, tr_directories, tst_directories, val_directories = ut.timit_prepare_data(arguments, 
                                                                                  folder='TRAIN', 
@@ -89,7 +93,8 @@ results_path = 'paramsearch_results'
 if not os.path.exists(results_path):
     os.mkdir(results_path)
 
-arguments.model = 'arc_{}_att_{}_share_{}_{}'.format(arguments.nn, arguments.att, arguments.share, timestamp)
+arguments.model = 'arc_{}_att_{}_share_{}_side_{}_sm_{}_{}'.format(arguments.nn, arguments.att, arguments.share, arguments.side, arguments.side_model, timestamp)
+print(arguments.model)
 
 # sample the configurations 
 hyperparam_configs = ut.sample_hyperparam_configs(arguments, Nconfigs=100)
@@ -105,12 +110,17 @@ for cnum, config in enumerate(hyperparam_configs):
     arguments.dropout = float(config[4])
     arguments.gated = int(config[5])
     arguments.act = str(config[6])
+    arguments.ntemp = int(config[7])
+    arguments.ds = int(config[8])
 
     # set the model
     if arguments.nn=='mlp':
         if arguments.att:
             if arguments.share:
-                snet = models.mlp_att_share(arguments, arguments.K, arguments.Kdis, 513)
+                    if arguments.side: 
+                        snet = models.mlp_att_share_side(arguments, arguments.K, arguments.Kdis, 513)
+                    else:
+                        snet = models.mlp_att_share(arguments, arguments.K, arguments.Kdis, 513)
             else:
                 snet = models.mlp_att(arguments, arguments.K, arguments.Kdis, 513)
         else:
@@ -121,7 +131,10 @@ for cnum, config in enumerate(hyperparam_configs):
     if arguments.nn=='rnn':
         if arguments.att:
             if arguments.share:
-                snet = models.lstm_att_share(arguments, arguments.K, arguments.Kdis, 513)
+                if arguments.side: 
+                    snet = models.lstm_att_share_side(arguments, arguments.K, arguments.Kdis, 513)
+                else:
+                    snet = models.lstm_att_share(arguments, arguments.K, arguments.Kdis, 513)
             else:
                 snet = models.lstm_att(arguments, arguments.K, arguments.Kdis, 513)
         else:

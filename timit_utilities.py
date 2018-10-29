@@ -11,8 +11,17 @@ eps = finfo(float32).eps;
 def tset(   mf = None, ff = None, dr = None):
     # Where the files are
     #p = '/usr/local/timit/timit-wav/train/'
-    home = '/' #os.path.expanduser('~')
-    p = os.path.join(home, 'data/lisa/data/timit/raw/TIMIT/TRAIN')
+    #home = '/' #os.path.expanduser('~')
+    #p = os.path.join(home, 'data/lisa/data/timit/raw/TIMIT/TRAIN')
+
+    home = '/' 
+    folder = 'TRAIN'
+    if os.path.expanduser('~') == '/home/optimass':
+        p = os.path.join(home, 'home/optimass/scratch/TIMIT', folder)
+    elif os.path.expanduser('~') == '/home/csubakan':
+        p = os.path.join(home, 'home/csubakan/scratch/TIMIT', folder)
+    elif os.path.expanduser('~') == '/u/subakany':
+        p = os.path.join(home, 'data/lisa/data/timit/raw/TIMIT', folder)
     
     # Pick a speaker directory
     if dr is None:
