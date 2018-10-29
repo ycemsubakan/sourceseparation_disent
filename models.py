@@ -516,6 +516,13 @@ class mlp_att_share_side(base_model):
                                dropout=dropout,
                                batch_first=True,
                                bidirectional=True)
+        elif self.side_model == 'mlp':
+            self.net1 = GatedDense(Linput, 2*K, dropout=dropout, 
+                                   activation=self.activation)
+            self.net2 = GatedDense(Linput, 2*K, dropout=dropout, 
+                                   activation=self.activation)
+
+
 
         hidden_size = 2*(K+2*K)
         if arguments.num_layers==1:
@@ -549,6 +556,16 @@ class mlp_att_share_side(base_model):
 
             f1 = ( ws1.unsqueeze(-1) * temps1.unsqueeze(1) ).sum(2)
             f2 = ( ws2.unsqueeze(-1) * temps2.unsqueeze(1) ).sum(2)
+        elif self.side_model=='mlp':
+            side1_red = self.net1(side1)
+            side2_red = self.net2(side2)
+
+            ws1 = F.softmax((side1_red.unsqueeze(1) * mix.unsqueeze(2)).sum(-1), dim=2)
+            ws2 = F.softmax((side2_red.unsqueeze(1) * mix.unsqueeze(2)).sum(-1), dim=2)
+
+            f1 = ( ws1.unsqueeze(-1) * side1_red.unsqueeze(1) ).sum(2)
+            f2 = ( ws2.unsqueeze(-1) * side2_red.unsqueeze(1) ).sum(2)
+
         
         cat_s = torch.cat([mix, f1, f2], dim=2)
 
