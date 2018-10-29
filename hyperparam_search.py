@@ -35,7 +35,7 @@ parser.add_argument('--nval', type=int, default=10)
 parser.add_argument('--nn', type=str, default='mlp', help='mlp, rnn')
 parser.add_argument('--att', type=int, default=1, help='0 1')
 parser.add_argument('--share', type=int, default=1, help='0 1')
-parser.add_argument('--side', type=int, default=0, help='enable use of side data')
+parser.add_argument('--side', type=int, default=1, help='enable use of side data')
 parser.add_argument('--gated', type=int, default=0, help='0 1')
 parser.add_argument('--num_layers', type=int, default=2, help='1 2 3')
 parser.add_argument('--act', type=str, default='relu', help='relu, sigmoid')
@@ -98,7 +98,7 @@ results_path = 'paramsearch_results'
 if not os.path.exists(results_path):
     os.mkdir(results_path)
 
-arguments.model = 'arc_{}_att_{}_share_{}_{}'.format(arguments.nn, arguments.att, arguments.share, timestamp)
+arguments.model = 'arc_{}_att_{}_share_{}_side_{}'.format(arguments.nn, arguments.att, arguments.share, arguments.side, timestamp)
 
 # sample the configurations 
 hyperparam_configs = ut.sample_hyperparam_configs(arguments, Nconfigs=100)

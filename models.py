@@ -597,20 +597,18 @@ class lstm_att_share_side(base_model):
                                batch_first=True,
                                bidirectional=True)
 
-        hidden_size = 2*(K+2*K)
+        hidden_size = 2*3*2*K
         if arguments.num_layers==1:
             self.sep_out = self.Dense(hidden_size, 2*Linput, dropout=dropout, activation=self.activation)
         elif arguments.num_layers==2:
             self.sep_out = nn.Sequential(self.Dense(hidden_size, hidden_size, dropout=dropout, activation=self.activation), 
-                                         self.Dense(hidden_size, 2*Linput, dropout=dropout, activation=self.activation))
+                                         self.Dense(hidden_size, 2*Linput,    dropout=dropout, activation=self.activation))
     
             
     def forward(self, dt):
         if self.arguments.cuda:
             for i, d in enumerate(dt):
                 dt[i] = d.cuda()
-
-        pdb.set_trace()
 
         mix, _ = (self.sep_rnn(dt[0]))
         
