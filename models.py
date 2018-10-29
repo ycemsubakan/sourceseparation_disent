@@ -6,7 +6,7 @@ import torch.nn.functional as F
 import pdb
 import numpy as np
 import utils as ut
-from nn import GatedDense, Dense
+from nn import GatedDense, Dense, Linear
 
 class base_model(nn.Module):
     def __init__(self, arguments, K, Kdis, Linput):
@@ -15,6 +15,7 @@ class base_model(nn.Module):
         self.Linput = Linput
         self.arguments = arguments
         self.pper = arguments.plot_interval
+
 
         if arguments.gated:
             self.Dense = GatedDense
@@ -25,6 +26,10 @@ class base_model(nn.Module):
             self.activation = nn.ReLU
         elif arguments.act == 'sigmoid':
             self.activation = nn.Sigmoid
+
+        # sorry for hacky code:
+        if arguments.linear:
+            self.Dense = Linear
 
     def trainer(self, loader, opt, vis):
         
@@ -57,7 +62,7 @@ class base_model(nn.Module):
                 print(all_vals)
 
                 # stop the run if the first val is bad
-                if all_vals[-1] < 5.0:
+                if all_vals[-1] < 2.0:
                     print('breaking the run..')
                     break
 
@@ -91,6 +96,7 @@ class base_model(nn.Module):
                                              f.size(1))]
         cat_dt = torch.cat(lst, dim=2)
         return cat_dt
+
 
 ''' MLP '''
 class mlp(base_model): 

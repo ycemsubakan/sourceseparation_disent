@@ -4,12 +4,6 @@ from pydoc import locate
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-#from torch.distributions import Categorical
-#from torch.distributions.normal import Normal
-#from torch.distributions.kl import kl_divergence as KL
-
-#from utils import * 
-#from distributions import hyperspherical_uniform, von_mises_fisher 
 
 # Variational Dropout
 # ----------------------------------------------------------------------------------
@@ -70,6 +64,22 @@ class Dense(nn.Module):
         out = self.drop(out)
 
         return out
+
+class Linear(nn.Module):
+    def __init__(self, input_size, output_size, dropout=0, activation=None):
+        super(Linear, self).__init__()
+
+        self.h = nn.Linear(input_size, output_size)
+        self.drop = nn.Dropout(p=dropout)
+
+    def forward(self, x):
+        h = self.h(x)
+
+        out = h 
+        out = self.drop(out)
+
+        return out
+
 
 # RNN Cell
 # ----------------------------------------------------------------------------------
