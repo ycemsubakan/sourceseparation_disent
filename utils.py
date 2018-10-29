@@ -104,7 +104,7 @@ def filter_directories(tr_dirs, tofilter_dirs, all_dirs):
 
 
 def timit_prepare_data(arguments, folder='TRAIN', ntrs=1000, ntsts=20, nval=10):
-    train_path = 'tr_data_withside.t'
+    train_path = '/data/lisa/data/sourcecep/tr_data_withside.t'
     if 1 & os.path.exists(train_path):
         temp  = torch.load(train_path)
         tr_data, tr_directories, tst_directories, val_directories = temp
@@ -224,7 +224,7 @@ def sample_hyperparam_configs(arguments, Nconfigs=100):
     elif arguments.nn == 'rnn':
         num_layers = np.random.choice([1, 2], Nconfigs, replace=True).reshape(-1, 1)
     dropout = np.random.choice([0.0, 0.1, 0.2], Nconfigs, replace=True).reshape(-1, 1)
-    gated = np.random.choice([0, 1], Nconfigs, replace=True).reshape(-1, 1)
+    gated = np.random.choice([1], Nconfigs, replace=True).reshape(-1, 1)
     activation = np.random.choice(['relu', 'sigmoid'], Nconfigs, replace=True).reshape(-1, 1)
     ntemp = np.random.choice([250, 500], Nconfigs, replace=True).reshape(-1, 1)
     ds = np.random.choice([1,2,5], Nconfigs, replace=True).reshape(-1, 1)
