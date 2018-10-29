@@ -46,7 +46,7 @@ parser.add_argument('--K', type=int, default=150)
 parser.add_argument('--Kdis', type=int, default=250)
 parser.add_argument('--ntemp', type=int, default=100)
 parser.add_argument('--ds', type=int, default=1, help='downsampling the side data')
-parser.add_argument('--side_model', type=str, default='rnn', help="mlp rnn")
+parser.add_argument('--side_model', type=str, default='mlp', help="mlp rnn")
 
 parser.add_argument('--linear', type=int, default=0)
 
@@ -98,7 +98,8 @@ results_path = 'paramsearch_results'
 if not os.path.exists(results_path):
     os.mkdir(results_path)
 
-arguments.model = 'arc_{}_att_{}_share_{}_side_{}_{}'.format(arguments.nn, arguments.att, arguments.share, arguments.side, timestamp)
+arguments.model = 'arc_{}_att_{}_share_{}_side_{}_sm_{}_{}'.format(arguments.nn, arguments.att, arguments.share, arguments.side, arguments.side_model, timestamp)
+print(arguments.model)
 
 # sample the configurations 
 hyperparam_configs = ut.sample_hyperparam_configs(arguments, Nconfigs=100)
