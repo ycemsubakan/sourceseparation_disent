@@ -98,7 +98,7 @@ results_path = 'paramsearch_results'
 if not os.path.exists(results_path):
     os.mkdir(results_path)
 
-arguments.model = 'arc_{}_att_{}_share_{}_side_{}_time{}'.format(arguments.nn, arguments.att, arguments.share, arguments.side, timestamp)
+arguments.model = 'arc_{}_att_{}_share_{}_side_{}_{}'.format(arguments.nn, arguments.att, arguments.share, arguments.side, timestamp)
 
 # sample the configurations 
 hyperparam_configs = ut.sample_hyperparam_configs(arguments, Nconfigs=100)
