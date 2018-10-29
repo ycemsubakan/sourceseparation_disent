@@ -180,7 +180,7 @@ def timit_prepare_data(arguments, folder='TRAIN', ntrs=1000, ntsts=20, nval=10):
             all_lens.append(data[0].size(1))
         
         min_len = min(all_lens)
-        for i, dr in enumerate(side_directories):
+        for i, dr in enumerate(tr_directories):
             print(i)
             source1side_all[i] = source1side_all[i][:, :min_len, :]
             source2side_all[i] = source2side_all[i][:, :min_len, :]
