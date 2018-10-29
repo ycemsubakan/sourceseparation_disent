@@ -34,6 +34,8 @@ def list_timit_dirs(folder='TRAIN'):
     home = '/' 
     if os.path.expanduser('~') == '/home/optimass':
         p = os.path.join(home, 'home/optimass/scratch/TIMIT', folder)
+    elif os.path.expanduser('~') == '/home/csubakan':
+        p = os.path.join(home, 'home/csubakan/scratch/TIMIT', folder)
     elif os.path.expanduser('~') == '/u/subakany':
         p = os.path.join(home, 'data/lisa/data/timit/raw/TIMIT', folder)
 
@@ -102,7 +104,7 @@ def filter_directories(tr_dirs, tofilter_dirs, all_dirs):
 
 
 def timit_prepare_data(arguments, folder='TRAIN', ntrs=1000, ntsts=20, nval=10):
-    train_path = 'tr_data.t'
+    train_path = 'tr_data_withside.t'
     if 1 & os.path.exists(train_path):
         temp  = torch.load(train_path)
         tr_data, tr_directories, tst_directories, val_directories = temp
@@ -110,13 +112,18 @@ def timit_prepare_data(arguments, folder='TRAIN', ntrs=1000, ntsts=20, nval=10):
         #source1side_all_cat, source2side_all_cat = temp_sides 
     else: 
         all_directories = np.array(list_timit_dirs(folder))
-        Ncombs = all_directories.shape[0]
-        inds = np.sort(np.random.choice(Ncombs, size=ntrs+ntsts+nval, replace=False))
-        directories = np.array(all_directories)[inds]
+        #Ncombs = all_directories.shape[0]
+        #inds = np.sort(np.random.choice(Ncombs, size=ntrs+ntsts+nval, replace=False))
+        #directories = np.array(all_directories)[inds]
 
-        tr_directories = directories[:ntrs]
-        tst_directories = directories[ntrs:(ntrs+ntsts)]
-        val_directories = directories[(ntrs+ntsts):]
+        #tr_directories = directories[:ntrs]
+        #tst_directories = directories[ntrs:(ntrs+ntsts)]
+        #val_directories = directories[(ntrs+ntsts):]
+
+        # use the old directories (a dirty fix)
+        temp  = torch.load('tr_data.t')
+        tr_data, tr_directories, tst_directories, val_directories = temp
+        
         #all_directories = append_dirs(directories) 
         #old = copy.deepcopy(tst_directories)
         tst_directories = filter_directories(tr_directories, tst_directories, 
@@ -158,34 +165,37 @@ def timit_prepare_data(arguments, folder='TRAIN', ntrs=1000, ntsts=20, nval=10):
         source1_all_cat = torch.cat(source1_all, 0)
         source2_all_cat = torch.cat(source2_all, 0)
 
-        tr_data = [mix_all_cat, mix_phaseall_cat, source1_all_cat, source2_all_cat]
         #if os.path.exists(train_path):
         
         # get side information data
-        #source1side_all = []
-        #source2side_all = []
-        #all_lens = []
-        #for i, dr in enumerate(side_directories):
-        #    print(i)
-        #    data = preprocess_timit_files(arguments, dr=dr) 
-        #    #data = iter(loader_mix).next()
-        #    source1side_all.append(data[2])
-        #    source2side_all.append(data[3])
-        #    all_lens.append(data[0].size(1))
-        #
-        #min_len = min(all_lens)
-        #for i, dr in enumerate(side_directories):
-        #    print(i)
-        #    source1side_all[i] = source1side_all[i][:, :min_len, :]
-        #    source2side_all[i] = source2side_all[i][:, :min_len, :]
+        source1side_all = []
+        source2side_all = []
+        all_lens = []
+        for i, dr in enumerate(tr_directories):
+            print('side_data {}'.format(i))
+            data = preprocess_timit_files(arguments, dr=dr) 
+            #data = iter(loader_mix).next()
+            source1side_all.append(data[4])
+            source2side_all.append(data[5])
+            all_lens.append(data[0].size(1))
+        
+        min_len = min(all_lens)
+        for i, dr in enumerate(side_directories):
+            print(i)
+            source1side_all[i] = source1side_all[i][:, :min_len, :]
+            source2side_all[i] = source2side_all[i][:, :min_len, :]
 
-        #source1side_all_cat = torch.cat(source1side_all, 0)
-        #source2side_all_cat = torch.cat(source2side_all, 0)
+        source1side_all_cat = torch.cat(source1side_all, 0)
+        source2side_all_cat = torch.cat(source2side_all, 0)
+
+        tr_data = [mix_all_cat, mix_phaseall_cat, source1_all_cat, source2_all_cat,
+                   source1side_all_cat, source2side_all_cat]
 
         torch.save([tr_data, tr_directories, tst_directories, val_directories], train_path)
 
     dataset = torch.utils.data.TensorDataset(tr_data[0], tr_data[1],
-                                             tr_data[2], tr_data[3])
+                                             tr_data[2], tr_data[3],
+                                             tr_data[4], tr_data[5])
                             
                             
     kwargs = {'num_workers': 1, 'pin_memory': True} if arguments.cuda else {}
@@ -531,7 +541,9 @@ def preprocess_timit_files(arguments, dr=None):
             torch.from_numpy(M_t1[0]).unsqueeze(0), 
             torch.from_numpy(M_t2[0]).unsqueeze(0),
             torch.from_numpy(Z[2]).unsqueeze(0),
-            torch.from_numpy(Z[3]).unsqueeze(0)]
+            torch.from_numpy(Z[3]).unsqueeze(0),
+            torch.from_numpy(M1[0]).unsqueeze(0),
+            torch.from_numpy(M2[0]).unsqueeze(0)]
 
 
 def preprocess_audio_files(arguments):

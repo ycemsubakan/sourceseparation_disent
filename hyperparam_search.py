@@ -20,9 +20,6 @@ import os
 
 timestamp = str(datetime.datetime.now()).replace(' ','')
 
-vis = visdom.Visdom(port=5800, server='http://cem@nmf.cs.illinois.edu', env='cem_dev',
-                    use_incoming_socket=False)
-assert vis.check_connection()
 
 parser = argparse.ArgumentParser(description='Source separation experiments')
 parser.add_argument('--seed', type=int, default=1, metavar='S', help='random seed (default: 1)')
@@ -53,7 +50,7 @@ parser.add_argument('--ntemp', type=int, default=100)
 parser.add_argument('--batch_size', type=int, default=10)
 parser.add_argument('--clip_norm', type=float, default=0.25)
 parser.add_argument('--plot_interval', type=int, default=100)
-parser.add_argument('--plot_training', type=int, default=1)
+parser.add_argument('--plot_training', type=int, default=0)
 parser.add_argument('--save_files', type=int, default=1)
 parser.add_argument('--EP_train', type=int, default=2000)
 parser.add_argument('--verbose', type=int, default=1)
@@ -71,6 +68,14 @@ torch.manual_seed(arguments.seed)
 if arguments.cuda:
     torch.cuda.manual_seed(arguments.seed)
 np.random.seed(arguments.seed)
+
+if arguments.plot_training:
+    vis = visdom.Visdom(port=5800, server='http://cem@nmf.cs.illinois.edu', env='cem_dev',
+                        use_incoming_socket=False)
+    assert vis.check_connection()
+else:
+    vis = None
+
 
 loader, tr_directories, tst_directories, val_directories = ut.timit_prepare_data(arguments, 
                                                                                  folder='TRAIN', 

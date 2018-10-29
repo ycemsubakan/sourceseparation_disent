@@ -50,7 +50,7 @@ parser.add_argument('--ntemp', type=int, default=100)
 parser.add_argument('--batch_size', type=int, default=10)
 parser.add_argument('--clip_norm', type=float, default=0.25)
 parser.add_argument('--plot_interval', type=int, default=100)
-parser.add_argument('--plot_training', type=int, default=1)
+parser.add_argument('--plot_training', type=int, default=0)
 parser.add_argument('--save_files', type=int, default=1)
 parser.add_argument('--EP_train', type=int, default=2000)
 parser.add_argument('--verbose', type=int, default=1)
@@ -75,6 +75,8 @@ loader, tr_directories, tst_directories, val_directories = ut.timit_prepare_data
                                                                                  folder='TRAIN', 
                                                                                  ntrs=arguments.ntrs, 
                                                                                  ntsts=arguments.ntsts)
+
+pdb.set_trace()
 arguments.tr_directories = tr_directories
 arguments.tst_directories = tst_directories
 arguments.val_directories = val_directories
